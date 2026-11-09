@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Los Mojones del Alférez Zamora v4</title>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<style>
+body{margin:0;overflow:hidden;font-family:Georgia,serif;background:#000;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#hud{position:fixed;top:12px;left:12px;color:#f8ecd0;background:linear-gradient(#2a1a0ecc,#1a100acc);border:2px solid #b08a4a;padding:12px 14px;max-width:400px;border-radius:8px;font-size:15px}
+#hud hr{border:0;border-top:1px solid #b08a4a;margin:8px 0}
+#dlg{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);width:min(700px,90vw);background:#f3e2c0;color:#2a1a0e;border:3px solid #6b4423;border-radius:10px;padding:16px 20px;font-size:17px;display:none;box-shadow:0 6px 20px #0008}
+#dlg b{color:#8a2a10}
+#hint{position:fixed;top:58%;left:50%;transform:translateX(-50%);color:#fff;font-size:18px;text-shadow:0 0 6px #000;display:none}
+#start{position:fixed;inset:0;background:radial-gradient(#3a2614ee,#120a05f5);color:#f3e2c0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;cursor:pointer}
+#start h1{font-size:clamp(26px,7vw,44px);margin:0 0 10px;color:#e8c070;text-shadow:0 3px 0 #000}
+#mira{position:fixed;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff;box-shadow:0 0 4px #000}
+#final{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:#fff3c8;font-size:clamp(26px,4.2vw,54px);text-shadow:0 4px 14px #000,0 0 34px #e8a040;padding:40px;opacity:0;transition:opacity 2.5s;cursor:pointer;background:radial-gradient(#0000,#0007)}
+#final small{font-size:18px;margin-top:28px;opacity:.85}
+#velo{position:fixed;inset:0;pointer-events:none;background:rgba(200,40,0,0);transition:background 3s;z-index:5}
+#dlg .op{display:block;margin-top:6px;color:#2a5a8a;font-weight:bold}
+#dlg i{color:#2a5a8a}
+#dlg{cursor:pointer;max-height:42vh;overflow-y:auto;z-index:7}
+#dlg .sig{display:block;text-align:right;font-size:13px;color:#6b4423;margin-top:8px;font-style:italic}
+#dlg .op{cursor:pointer;padding:3px 0}
+#start{overflow-y:auto;box-sizing:border-box}
+#tactil{display:none}
+.tc.jugando #tactil{display:block}
+#joy{position:fixed;left:18px;bottom:18px;width:130px;height:130px;border-radius:50%;background:#f3e2c022;border:2px solid #f3e2c088;z-index:6;touch-action:none}
+#joyB{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;background:#f3e2c0aa;pointer-events:none}
+.bt{position:fixed;z-index:6;border-radius:50%;background:#2a1a0ecc;border:2px solid #b08a4a;color:#f3e2c0;font:bold 20px Georgia,serif;display:flex;align-items:center;justify-content:center;touch-action:none}
+.bt.on{background:#b08a4acc;color:#2a1a0e}
+#bE{right:22px;bottom:100px;width:78px;height:78px;font-size:28px}
+#bS{right:112px;bottom:22px;width:62px;height:62px;font-size:24px}
+#bC{right:26px;bottom:18px;width:62px;height:62px;font-size:24px}
+#bP{right:10px;top:10px;width:44px;height:44px;font-size:15px}
+.tc #hud{font-size:12px;max-width:52vw;padding:8px 10px;top:8px;left:8px}
+.tc #dlg{bottom:12px;left:160px;right:200px;width:auto;transform:none;font-size:15px;padding:10px 14px}
+.tc #hint{top:62%}
+@media (orientation:portrait){.tc #dlg{left:8px;right:8px;bottom:192px}.tc #hud{max-width:72vw}}
+</style></head>
+<body>
+<div id="start"><h1>Los Mojones del Alférez Zamora</h1>
+<p>Paraje del Tibás, valle de Barva, siglo XVII.<br>El rey le otorgó tierras al alférez Sebastián de Zamora. Vos sos su ayudante.</p>
+<p>WASD: caminar · Shift: correr · Espacio: saltar · Ratón: mirar · E: interactuar · Enter o clic: avanzar diálogo · 1-5: elegir respuesta · Esc: pausa</p><p><b>Clic para empezar</b></p></div>
+<div id="velo"></div><div id="hud"></div><div id="dlg"></div><div id="hint">[E] Interactuar</div><div id="mira"></div>
+<div id="tactil"><div id="joy"><div id="joyB"></div></div><div class="bt" id="bE">E</div><div class="bt" id="bS">⤒</div><div class="bt" id="bC">»</div><div class="bt" id="bP">❚❚</div></div>
+<div id="final">Felicidades: lograste revivir la Gran Toyopán; el mundo ahora está a salvo<small>Clic para seguir explorando</small></div>
+<script type="module">
+import * as THREE from 'three';
+import {PointerLockControls} from 'three/addons/controls/PointerLockControls.js';
+const TACTIL=matchMedia('(pointer:coarse)').matches||/[?&]tactil=1/.test(location.search);
+const CTRL_T="Joystick (izquierda): caminar · »: correr · ⤒: saltar · Deslizá el dedo: mirar · E: interactuar · Tocá el diálogo para avanzar · Tocá una respuesta para elegir · ❚❚: pausa";
+const adaptar=h=>TACTIL?h.replace(/<p>WASD[^<]*<\/p>/,"<p>"+CTRL_T+"</p>").replace(/Clic para/g,"Tocá para"):h;
+if(TACTIL){document.body.classList.add('tc');const S0=document.getElementById('start');S0.innerHTML=adaptar(S0.innerHTML);document.getElementById('hint').textContent='Tocá E para interactuar';}
+let tEv=0;
+
+// ================= AUDIO (sintetizado, sin archivos) =================
+let AC=null,master=null;
+function ac(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.5;master.connect(AC.destination);}
+ if(AC.state==='suspended')AC.resume();return AC;}
+function tono(f,t0,d,tipo='sine',vol=.2,f2=0,ataque=.02){const a=ac(),t=a.currentTime+t0,o=a.createOscillator(),g=a.createGain();
+ o.type=tipo;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+ataque);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05);}
+const sfx={
+ hablar(){tono(520,0,.08,'square',.05);tono(660,.09,.08,'square',.04);},
+ recoger(){[523,659,784,1047].forEach((f,i)=>tono(f,i*.08,.3,'triangle',.18));},
+ mojon(){tono(140,0,.35,'sine',.4,50);tono(880,.15,.5,'triangle',.12);tono(1320,.25,.6,'sine',.08);},
+ saltar(){tono(300,0,.15,'sine',.1,600);},
+ mistico(){[220,277,330,415].forEach((f,i)=>{tono(f,i*.15,3,'sine',.07,0,.8);tono(f*1.006,i*.15,3,'sine',.05,0,.8);});tono(1760,.6,2,'triangle',.04,0,.3);},
+ lechuza(){tono(420,0,.35,'sine',.2,380,.05);tono(400,.45,.6,'sine',.22,330,.05);},
+ oracion(){[196,247,294,392].forEach((f,i)=>tono(f,i*.5,2.6,'triangle',.1,0,.4));},
+ boom(){tono(120,0,.6,'sine',.25,40);tono(2000,0,.4,'triangle',.03,600);},
+ fanfarria(){const n=[[392,0,.18],[392,.2,.18],[392,.4,.18],[523,.6,.85],[466,1.5,.28],[523,1.82,.28],[587,2.14,.28],[659,2.46,1.7]];
+  n.forEach(([f,t,d])=>{tono(f,t,d,'sawtooth',.08);tono(f/2,t,d,'triangle',.12);});
+  [523,659,784].forEach(f=>tono(f,2.46,1.9,'square',.035));tono(130.8,2.46,1.9,'sine',.25);
+  [0,.6,1.5,2.46].forEach(t=>tono(90,t,.25,'sine',.3,45));}
+};
+
+// ================= ESCENA =================
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xa8d4f0);scene.fog=new THREE.Fog(0xb8d8ec,60,260);
+const cam=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.1,800);
+const R=new THREE.WebGLRenderer({antialias:true});R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,TACTIL?1.25:2));
+R.shadowMap.enabled=true;R.shadowMap.type=TACTIL?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;document.body.appendChild(R.domElement);
+scene.add(new THREE.HemisphereLight(0xdff0ff,0x4a6a2a,0.9));
+const sun=new THREE.DirectionalLight(0xfff0d0,1.4);sun.position.set(60,90,30);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-120,right:120,top:120,bottom:-120,far:350});scene.add(sun);
+const M=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.85,flatShading:true,...o});
+const sh=m=>{m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return m};
+const ease=k=>k*k*(3-2*k);
+const reloj=new THREE.Clock();
+const eventos=[];function luego(s,fn){eventos.push({t:tEv+s,fn});}
+
+// ---------- TERRENO (con un volcán caminable) ----------
+const RIO_X=45, VX=-110, VZ=-115, VR=55, VH=38;   // volcán del secreto
+const PX=-25, PZ=25;                                 // plaza de la Gran Toyopán
+const TX=-100, TZ=45;
+const ZX=125, ZZ=-95, ZR=50, ZH=34;                  // cerro Zurquí (al este del Tures)
+const rioX=z=>RIO_X-Math.sin(z*.05)*6;                                // tumba de Yorustí
+function altura(x,z){let h=Math.sin(x*.03)*2.5+Math.cos(z*.025)*2.5+Math.sin((x+z)*.06)*1.2;
+ h+=Math.max(0,(-z-80)*.08);
+ const dz=Math.hypot(x-ZX,z-ZZ);if(dz<ZR){const s=1-dz/ZR;h+=ZH*s*s*(3-2*s);}
+ const dv=Math.hypot(x-VX,z-VZ);if(dv<VR){const s=1-dv/VR;h+=VH*s*s*(3-2*s);}
+ const dr=Math.abs(x-RIO_X+Math.sin(z*.05)*6);if(dr<8)h-=(8-dr)*0.45;return h;}
+const tg=new THREE.PlaneGeometry(400,400,170,170);tg.rotateX(-Math.PI/2);
+const cols=[];const p=tg.attributes.position;
+for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),h=altura(x,z);p.setY(i,h);
+ const c=new THREE.Color(h<-1.5?0x8a7a55:h>24?0x6e6050:h>6?0x4a6e30:0x6a9a3e);c.offsetHSL(0,0,(Math.random()-.5)*.05);cols.push(c.r,c.g,c.b);}
+tg.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));tg.computeVertexNormals();
+const terr=new THREE.Mesh(tg,new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:1}));terr.receiveShadow=true;scene.add(terr);
+
+const rg=new THREE.PlaneGeometry(9,400,8,200);rg.rotateX(-Math.PI/2);
+const rp=rg.attributes.position;for(let i=0;i<rp.count;i++){const z=rp.getZ(i);rp.setX(i,rp.getX(i)+RIO_X-Math.sin(z*.05)*6);}
+const rio=new THREE.Mesh(rg,new THREE.MeshStandardMaterial({color:0x3f88c5,transparent:true,opacity:.85,roughness:.15,metalness:.2}));rio.position.y=-1.6;scene.add(rio);
+
+// volcanes lejanos (decorado)
+[[20,-250,90,70],[-160,-235,70,55],[130,-250,60,45]].forEach(([x,z,r,h])=>{const v=new THREE.Mesh(new THREE.ConeGeometry(r,h,14,4),M(0x3c5a34));v.position.set(x,h/2-2,z);scene.add(v);
+ const n=new THREE.Mesh(new THREE.ConeGeometry(r*.25,h*.2,14),M(0x5a6a50));n.position.set(x,h*.92-2,z);scene.add(n);});
+
+const nubes=[];for(let i=0;i<14;i++){const n=new THREE.Group();for(let j=0;j<5;j++){const s=new THREE.Mesh(new THREE.SphereGeometry(4+Math.random()*3,7,5),M(0xffffff,{roughness:1}));s.position.set(j*4-8,Math.random()*2,Math.random()*3);n.add(s);}
+ n.position.set((Math.random()-.5)*400,60+Math.random()*15,(Math.random()-.5)*400);scene.add(n);nubes.push(n);}
+
+// ---------- VEGETACIÓN ----------
+const arboles=[];
+function arbol(x,z){const t=new THREE.Group(),k=.8+Math.random()*.7;
+ const tr=new THREE.Mesh(new THREE.CylinderGeometry(.25*k,.45*k,4*k,6),M(0x5a3a1e));tr.position.y=2*k;t.add(tr);
+ const verde=[0x2f6b2a,0x3a7a30,0x2a5e26][Math.floor(Math.random()*3)];
+ for(let i=0;i<4;i++){const c=new THREE.Mesh(new THREE.IcosahedronGeometry((1.6+Math.random())*k,0),M(verde));c.position.set((Math.random()-.5)*2*k,(4.2+Math.random()*1.5)*k,(Math.random()-.5)*2*k);t.add(c);}
+ t.position.set(x,altura(x,z),z);t.rotation.y=Math.random()*6;scene.add(sh(t));arboles.push(t);}
+for(let i=0;i<240;i++){const x=(Math.random()-.5)*340,z=(Math.random()-.5)*340;
+ if(Math.hypot(x,z)<12||Math.abs(x-RIO_X)<11||Math.hypot(x+60,z-70)<14||Math.hypot(x-VX,z-VZ)<VR*.55||Math.hypot(x-TX,z-TZ)<10||Math.hypot(x-ZX,z-ZZ)<8)continue;arbol(x,z);}
+for(let i=0;i<120;i++){const x=(Math.random()-.5)*300,z=(Math.random()-.5)*300;
+ const r=new THREE.Mesh(new THREE.DodecahedronGeometry(.3+Math.random()*.8,0),M(0x8a8a80));r.position.set(x,altura(x,z),z);scene.add(sh(r));}
+const fg=new THREE.SphereGeometry(.12,5,4);
+for(let i=0;i<400;i++){const x=(Math.random()-.5)*260,z=(Math.random()-.5)*260;const f=new THREE.Mesh(fg,M([0xffd23a,0xff6a8a,0xffffff,0xc070ff][i%4]));f.position.set(x,altura(x,z)+.15,z);scene.add(f);}
+
+// ---------- PERSONAJES ----------
+function persona({piel=0xb07850,camisa=0xe8e0c8,pantalon=0x5a4030,sombrero=null,pelo=0x1a1008,barba=false,capa=null,falda=null,banda=null,larga=false}){
+ const g=new THREE.Group();
+ const pierna=()=>{const l=new THREE.Group();const m=new THREE.Mesh(new THREE.BoxGeometry(.22,.85,.25),M(pantalon));m.position.y=-.42;const pie=new THREE.Mesh(new THREE.BoxGeometry(.24,.12,.36),M(falda?piel:0x3a2414));pie.position.set(0,-.88,.06);l.add(m,pie);return l};
+ const lL=pierna(),lR=pierna();lL.position.set(-.14,.95,0);lR.position.set(.14,.95,0);
+ const torso=new THREE.Mesh(new THREE.BoxGeometry(.62,.75,.34),M(camisa));torso.position.y=1.35;
+ const cint=new THREE.Mesh(new THREE.BoxGeometry(.64,.1,.36),M(0x3a2414));cint.position.y=1.02;
+ const brazo=()=>{const a=new THREE.Group();const m=new THREE.Mesh(new THREE.BoxGeometry(.17,.68,.2),M(camisa));m.position.y=-.32;const mano=new THREE.Mesh(new THREE.BoxGeometry(.15,.15,.15),M(piel));mano.position.y=-.72;a.add(m,mano);return a};
+ const aL=brazo(),aR=brazo();aL.position.set(-.41,1.68,0);aR.position.set(.41,1.68,0);
+ const cab=new THREE.Group();cab.position.y=1.9;
+ const cara=new THREE.Mesh(new THREE.BoxGeometry(.4,.44,.4),M(piel));cara.position.y=.12;cab.add(cara);
+ const ojo=()=>new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.02),M(0x111111));const o1=ojo(),o2=ojo();o1.position.set(-.09,.17,.205);o2.position.set(.09,.17,.205);cab.add(o1,o2);
+ const nariz=new THREE.Mesh(new THREE.BoxGeometry(.06,.1,.08),M(piel));nariz.position.set(0,.09,.22);cab.add(nariz);
+ const pel=new THREE.Mesh(new THREE.BoxGeometry(.42,.14,.42),M(pelo));pel.position.y=.36;cab.add(pel);
+ const nuca=new THREE.Mesh(new THREE.BoxGeometry(.42,.3,.08),M(pelo));nuca.position.set(0,.22,-.19);cab.add(nuca);
+ if(larga){const lg=new THREE.Mesh(new THREE.BoxGeometry(.44,.85,.1),M(pelo));lg.position.set(0,-.12,-.22);cab.add(lg);}
+ if(barba){const b=new THREE.Mesh(new THREE.BoxGeometry(.38,.16,.06),M(pelo));b.position.set(0,-.04,.2);cab.add(b);}
+ if(sombrero){const ala=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,14),M(sombrero));ala.position.y=.44;const copa=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.3,12),M(sombrero));copa.position.y=.6;cab.add(ala,copa);}
+ if(banda){const b=new THREE.Mesh(new THREE.BoxGeometry(.44,.07,.44),M(banda));b.position.y=.3;cab.add(b);}
+ g.add(lL,lR,torso,cint,aL,aR,cab);
+ if(falda){const f=new THREE.Mesh(new THREE.BoxGeometry(.66,.55,.38),M(falda));f.position.y=.78;g.add(f);}
+ if(capa){const c=new THREE.Mesh(new THREE.BoxGeometry(.66,1.1,.05),M(capa));c.position.set(0,1.2,-.2);g.add(c);}
+ g.userData={lL,lR,aL,aR,cab,fase:Math.random()*6};return sh(g);}
+function animar(pj,t,caminando){const u=pj.userData,s=caminando?Math.sin(t*7+u.fase)*.6:0;
+ u.lL.rotation.x=s;u.lR.rotation.x=-s;u.aL.rotation.x=-s*.8+(caminando?0:Math.sin(t*1.5+u.fase)*.05);u.aR.rotation.x=s*.8;
+ u.cab.position.y=1.9+Math.sin(t*2+u.fase)*.015;u.cab.rotation.y=caminando?0:Math.sin(t*.7+u.fase)*.25;}
+
+const etiquetas=[];
+function cartel(txt,col='#e8c070'){const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
+ x.fillStyle='#000a';x.fillRect(4,4,504,88);x.fillStyle=col;x.font='bold 40px Georgia';x.textAlign='center';x.fillText(txt,256,62);
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));s.scale.set(3.6,.68,1);etiquetas.push(s);return s;}
+function colocar(o,x,z,ry=0){o.position.set(x,altura(x,z),z);o.rotation.y=ry;scene.add(o);return o;}
+
+const anciano=colocar(persona({piel:0x8a5a34,camisa:0xd8c8a0,pantalon:0xd8c8a0,pelo:0xdddddd}),-10,-15,.5);
+const bast=new THREE.Mesh(new THREE.CylinderGeometry(.04,.05,1.9,6),M(0x6b4423));bast.position.set(.15,-.6,.12);anciano.userData.aR.add(bast);
+const alferez=colocar(persona({piel:0xe0b090,camisa:0x8a2a1a,pantalon:0x2a2a3a,sombrero:0x1a1a1a,pelo:0x3a2010,barba:true,capa:0x5a1010}),4,-4,-.6);
+const escribano=colocar(persona({piel:0xe0b090,camisa:0x1a1a1a,pantalon:0x1a1a1a,pelo:0x5a5a5a}),-60,62,Math.PI);
+const campesino=colocar(persona({piel:0xc08a60,camisa:0xf0f0e0,pantalon:0x6a5a40,sombrero:0xd8c070}),RIO_X-12,-30,0);
+const npcs=[anciano,alferez,escribano];
+[[anciano,'Anciano huetar'],[alferez,'Alférez Zamora'],[escribano,'Escribano'],[campesino,'Arriero']].forEach(([n,t])=>{const s=cartel(t);s.position.y=2.9;n.add(s);});
+
+// buey
+const buey=new THREE.Group();const cb=new THREE.Mesh(new THREE.BoxGeometry(1,1,2),M(0x9a7a5a));cb.position.y=1.1;
+const ca=new THREE.Mesh(new THREE.BoxGeometry(.6,.6,.7),M(0x9a7a5a));ca.position.set(0,1.4,1.2);
+const cu=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,1.1),M(0xeeeeee));cu.rotation.z=Math.PI/2;cu.position.set(0,1.8,1.2);buey.add(cb,ca,cu);
+[[-.35,.8],[.35,.8],[-.35,-.8],[.35,-.8]].forEach(([x,z])=>{const l=new THREE.Mesh(new THREE.BoxGeometry(.2,.7,.2),M(0x7a5a3a));l.position.set(x,.35,z);buey.add(l)});
+colocar(sh(buey),RIO_X-15,-27,.8);
+
+// casa del escribano
+const casa=new THREE.Group();const par=new THREE.Mesh(new THREE.BoxGeometry(10,4,7),M(0xeadcc0));par.position.y=2;
+const zoc=new THREE.Mesh(new THREE.BoxGeometry(10.1,.8,7.1),M(0x4a6a8a));zoc.position.y=.4;
+const tech=new THREE.Mesh(new THREE.CylinderGeometry(0,6.5,3,4,1),M(0xa8482a));tech.rotation.y=Math.PI/4;tech.scale.set(1.15,1,.85);tech.position.y=5.5;
+const pue=new THREE.Mesh(new THREE.BoxGeometry(1.6,2.6,.1),M(0x5a3418));pue.position.set(0,1.3,3.55);
+const ven=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,.1),M(0x3a2414));ven.position.set(3,2.2,3.55);
+for(let i=-4;i<=4;i+=2){const c=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,3.2),M(0x6b4423));c.position.set(i,1.6,4.8);casa.add(c);}
+const corr=new THREE.Mesh(new THREE.BoxGeometry(10.5,.2,2.4),M(0xa8482a));corr.position.set(0,3.3,4.6);
+casa.add(par,zoc,tech,pue,ven,corr);colocar(sh(casa),-60,70,0);
+
+// mojones
+const linderos=[[RIO_X-8,-50,'Junto al río Tures'],[-55,-35,'Hacia el monte'],[20,65,'Hacia el sur']];
+const hacerMojon=([x,z,t])=>{const g=new THREE.Group();
+ const piedra=new THREE.Mesh(new THREE.CylinderGeometry(.35,.5,1.6,6),M(0x9a9a90));piedra.position.y=-1.2;g.add(piedra);
+ const cruz=new THREE.Mesh(new THREE.BoxGeometry(.5,.08,.02),M(0x333333));cruz.position.set(0,.4,.36);piedra.add(cruz);
+ const est=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,3),M(0xffcc33,{emissive:0xffaa00,emissiveIntensity:.8}));est.position.y=1.5;g.add(est);
+ const band=new THREE.Mesh(new THREE.PlaneGeometry(.9,.5),M(0xcc2222,{side:THREE.DoubleSide}));band.position.set(.45,2.7,0);g.add(band);
+ const s=cartel(t,'#fff');s.position.y=3.6;g.add(s);g.visible=false;colocar(sh(g),x,z);
+ return {g,piedra,est,band,s,listo:false}};
+const mojones=linderos.map(hacerMojon);
+
+// partículas
+const parts=[];function chispas(pos,col=0xffdd55,n=30,tam=.1,vel=1){for(let i=0;i<n;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(tam,tam,tam),new THREE.MeshBasicMaterial({color:col}));
+ m.position.copy(pos);m.userData.v=new THREE.Vector3((Math.random()-.5)*4*vel,(Math.random()*5+2)*vel,(Math.random()-.5)*4*vel);m.userData.t=1.4;scene.add(m);parts.push(m);}}
+
+// pergamino (más separado del Alférez)
+const perg=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.7,10),M(0xf3e2c0));perg.rotation.z=Math.PI/2;
+const pergG=new THREE.Group();pergG.add(perg);const ps=cartel('Merced real','#fff');ps.position.y=.8;pergG.add(ps);colocar(pergG,10,0);pergG.position.y+=1;
+
+// ================= SECRETO =================
+// marca en la cima del volcán
+function texEspiral(){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');
+ x.fillStyle='#3a3a36';x.fillRect(0,0,256,256);x.strokeStyle='#9fe8ff';x.lineWidth=9;x.beginPath();
+ for(let a=0;a<6*Math.PI;a+=.05){const r=6+a*6;const px=128+Math.cos(a)*r,py=128+Math.sin(a)*r;a===0?x.moveTo(px,py):x.lineTo(px,py);}x.stroke();
+ return new THREE.CanvasTexture(c);}
+const te=texEspiral();
+const marca=new THREE.Group();
+const disco=new THREE.Mesh(new THREE.CylinderGeometry(1,1.1,.35,20),[M(0x5a5a52),new THREE.MeshStandardMaterial({map:te,emissive:0x2aa0c0,emissiveMap:te,emissiveIntensity:.9}),M(0x5a5a52)]);
+disco.position.y=.17;marca.add(disco);
+const orbe=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),new THREE.MeshBasicMaterial({color:0x9fe8ff,transparent:true,opacity:.7}));orbe.position.y=2;marca.add(orbe);
+colocar(sh(marca),VX,VZ);
+
+// gran ceiba y tumba de Yorustí
+const ceiba=new THREE.Group();
+const tronco=new THREE.Mesh(new THREE.CylinderGeometry(1.5,2.4,15,10),M(0x8a7a6a));tronco.position.y=7.5;ceiba.add(tronco);
+for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const cont=new THREE.Mesh(new THREE.BoxGeometry(.4,3,2.6),M(0x8a7a6a));cont.position.set(Math.cos(a)*2,1.3,Math.sin(a)*2);cont.rotation.y=-a;ceiba.add(cont);}
+for(let i=0;i<9;i++){const a=i/9*Math.PI*2,r=i?5.5:0;const c=new THREE.Mesh(new THREE.IcosahedronGeometry(3.6,0),M(0x2f6b2a));c.position.set(Math.cos(a)*r,16+Math.random()*1.5,Math.sin(a)*r);c.scale.y=.55;ceiba.add(c);}
+colocar(sh(ceiba),TX,TZ+7);
+const tumba=new THREE.Group();
+const monticulo=new THREE.Mesh(new THREE.SphereGeometry(2.6,14,8),M(0x7a5a3a));monticulo.scale.y=.32;tumba.add(monticulo);
+for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const pd=new THREE.Mesh(new THREE.DodecahedronGeometry(.45,0),M(0x8a8a80));pd.position.set(Math.cos(a)*3.1,.2,Math.sin(a)*3.1);tumba.add(pd);}
+const losa=new THREE.Mesh(new THREE.BoxGeometry(1.8,.2,1),[M(0x6a6a62),M(0x6a6a62),new THREE.MeshStandardMaterial({map:te,emissive:0x2aa0c0,emissiveMap:te,emissiveIntensity:.4}),M(0x6a6a62),M(0x6a6a62),M(0x6a6a62)]);
+losa.position.y=.9;tumba.add(losa);
+tumba.add((()=>{const s=cartel('Tumba de Yorustí','#9fe8ff');s.position.y=3;return s;})());
+colocar(sh(tumba),TX,TZ);tumba.visible=false;
+
+// metate sagrado
+const metate=new THREE.Group();
+const placa=new THREE.Mesh(new THREE.BoxGeometry(1.8,.25,1),M(0x5a5a56));placa.position.y=.75;placa.rotation.z=.08;metate.add(placa);
+[[-.65,.3],[-.65,-.3],[.65,0]].forEach(([x,z])=>{const pa=new THREE.Mesh(new THREE.CylinderGeometry(.11,.14,.65,6),M(0x5a5a56));pa.position.set(x,.33,z);metate.add(pa);});
+const cabezaM=new THREE.Mesh(new THREE.BoxGeometry(.35,.35,.4),M(0x5a5a56));cabezaM.position.set(1,.95,0);metate.add(cabezaM);
+const manoM=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,1,8),M(0x6a6a64));manoM.rotation.x=Math.PI/2;manoM.position.y=1;metate.add(manoM);
+const metX=TX+5,metZ=TZ-3,metY=altura(metX,metZ);
+metate.add((()=>{const s=cartel('Metate sagrado','#9fe8ff');s.position.y=2.6;return s;})());
+metate.position.set(metX,metY-2.6,metZ);scene.add(sh(metate));metate.visible=false;
+
+// lechuza
+function crearLechuza(){const g=new THREE.Group();
+ const cuerpo=new THREE.Mesh(new THREE.SphereGeometry(.32,10,8),M(0x8a6a4a));cuerpo.scale.set(1,1.3,.9);g.add(cuerpo);
+ const pecho=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),M(0xd8c4a0));pecho.scale.set(1,1.2,.6);pecho.position.set(0,-.02,.17);g.add(pecho);
+ const cab=new THREE.Group();cab.position.y=.48;g.add(cab);
+ cab.add(new THREE.Mesh(new THREE.SphereGeometry(.27,10,8),M(0x8a6a4a)));
+ const cara=new THREE.Mesh(new THREE.CircleGeometry(.22,16),M(0xeedcbc));cara.position.z=.24;cab.add(cara);
+ [-.09,.09].forEach(x=>{const o=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),new THREE.MeshBasicMaterial({color:0xffd23a}));o.position.set(x,.04,.26);cab.add(o);
+  const pu=new THREE.Mesh(new THREE.SphereGeometry(.035,6,5),new THREE.MeshBasicMaterial({color:0x000000}));pu.position.set(x,.04,.32);cab.add(pu);
+  const oreja=new THREE.Mesh(new THREE.ConeGeometry(.06,.18,5),M(0x6a4a2a));oreja.position.set(x*1.6,.26,0);oreja.rotation.z=-x*3;cab.add(oreja);});
+ const pico=new THREE.Mesh(new THREE.ConeGeometry(.04,.12,5),M(0x4a3a2a));pico.rotation.x=Math.PI/2;pico.position.set(0,-.05,.3);cab.add(pico);
+ const ala=s=>{const a=new THREE.Group();a.position.set(.3*s,.1,0);const m=new THREE.Mesh(new THREE.BoxGeometry(.6,.05,.4),M(0x7a5a3a));m.position.x=.3*s;a.add(m);g.add(a);return a;};
+ return {g:sh(g),cab,alaL:ala(-1),alaR:ala(1)};}
+const buho=crearLechuza();buho.g.visible=false;scene.add(buho.g);
+
+// la Gran Toyopán: casas cónicas, fogata y gente
+const casas=[];
+function nuevaCasa(x,z,esc=1){
+ const c=new THREE.Group();
+ const pared=new THREE.Mesh(new THREE.CylinderGeometry(3,3.1,1.7,16),M(0x9a7a50));pared.position.y=.85;c.add(pared);
+ const techo=new THREE.Mesh(new THREE.ConeGeometry(3.9,5.2,16),M(0xc8a860));techo.position.y=4.2;c.add(techo);
+ const punta=new THREE.Mesh(new THREE.ConeGeometry(.35,.9,8),M(0x8a6a3a));punta.position.y=7.1;c.add(punta);
+ const puerta=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.5,.2),M(0x3a2414));puerta.position.set(0,.75,3.02);c.add(puerta);
+ colocar(sh(c),x,z,Math.atan2(PX-x,PZ-z));c.scale.set(esc,.01,esc);c.visible=false;casas.push(c);return c;}
+for(let i=0;i<5;i++){const a=i/5*Math.PI*2+.3;nuevaCasa(PX+Math.cos(a)*14,PZ+Math.sin(a)*14);}
+const fogata=new THREE.Group();
+for(let i=0;i<4;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,1.4,6),M(0x4a2a14));l.rotation.z=Math.PI/2;l.rotation.y=i*Math.PI/4;l.position.y=.15;fogata.add(l);}
+const llama=new THREE.Mesh(new THREE.ConeGeometry(.5,1.4,8),new THREE.MeshBasicMaterial({color:0xff8a20}));llama.position.y=.85;fogata.add(llama);
+colocar(fogata,PX,PZ);fogata.visible=false;
+// datos de los huetares (según el wiki «De Toyopán a la Actualidad»: testimonio de Rafael Bolaños y fuentes; los saludos en bribri, del curso FL-5000)
+const HUETARES=[
+ {nombre:'Turial',lineas:["<i>«Ìs be' tso'?»</i> —así saludan nuestros hermanos del sur, y así te saludo. Soy Turial, asistente del ibux Yurustí. ¡Mirá cómo respira otra vez la Gran Toyopán!","Nuestras casas redondas, los palenques, se levantan entre todos: aquí nadie construye solo."]},
+ {nombre:'Tures',lineas:["Mi nombre quedó en un río, en un pueblo y hasta en un puente. Yo sirvo a Yurustí, igual que Turial.","Algún día habrá un Tures en San Miguel y otro en Santo Tomás: los nombres viajan más que la gente."]},
+ {nombre:'Ibux',lineas:["Yurustí es ibux, jefe de esta parte del valle; no es cacique. El gran cacique es Garabito, que manda del río Virilla para acá. Del otro lado manda Guarco.","Los forasteros llaman «caciques» a todos los jefes. Entre nosotros cada cual tiene su lugar."]},
+ {nombre:'Guardián del Cuascuá',lineas:["<i>«Ye' tso' bua'ë»</i> —estoy bien, se dice en la lengua del sur. Yo cuido el camino del Cuascuá, que va de Quepo y Orotina hasta Santo Domingo y Matina.","El Cuascuá también es bosque sagrado: solo los chamanes entran. Quien va al monte pide permiso, aunque no vea a nadie."]},
+ {nombre:'Mercader',lineas:["Cambio sal, tortuga, plumas, cerámica policroma de Nicaragua y Guanacaste... y hasta algo de oro.","Cada cinco kilómetros hay un residencial en el bosque, a un día o medio día de camino. Nadie duerme a la intemperie."]},
+ {nombre:'Maestro de palabras',lineas:["<i>«Bua'ë»</i> decimos cuando algo es bueno y hay paz entre la gente. Es palabra de nuestros hermanos de Talamanca. Guardala: puede abrirte puertas.","<i>«Ye' miã́tche»</i>: hasta luego. Con pocas palabras de su lengua, un forastero ya no es tan forastero."]},
+ {nombre:'Agricultor',lineas:["Sembramos maíz, y también jocote, guayaba, culantro coyote y llantén. Esas plantas siguen en las huertas aunque cambien los tiempos y lleguen cercas nuevas.","El maíz se muele en el metate. Por eso el metate no es una piedra cualquiera: es memoria que alimenta."]},
+ {nombre:'Cronista',lineas:["Entre 1570 y 1575 juntaron a los sobrevivientes en la reducción de Barva, que estaba por Getsemaní, no donde está hoy el pueblo.","Unos dicen que éramos cientos de miles; otros, apenas veinte mil. Nadie lo sabe seguro, pero las epidemias y la explotación nos vaciaron."]},
+ {nombre:'Caminante',lineas:["<i>«Ìs be' tso'?»</i> Esto que vos llamás Santo Domingo, nosotros lo llamamos Tibás; y Santo Tomás es el Rincón de Tibás.","Más abajo, en San Miguel, hay un lugar llamado Hawei, «hierba de mucha agua». Los nombres cuentan cómo es la tierra."]},
+ {nombre:'Cazador',lineas:["Los nombres de nuestra gente terminan en vocal: Yurustí, Quisarcó. Si un papel dice «Yurustic», lo escribió un forastero.","Quisarcó fue una mujer principal; su nombre todavía se oirá en Santo Domingo cuando nadie recuerde por qué."]},
+ {nombre:'Alfarero',lineas:["La cerámica policroma se pinta con tierras de colores y se cuece al fuego: cada dibujo cuenta algo.","El oro lo trabajan pocos y se reserva para los jefes."]},
+ {nombre:'Viajero de Talamanca',lineas:["<i>«Ìs be' tso'?»</i> Vengo de Talamanca, donde se habla bribri. Allá se fue Francisco Correque, hijo de Guarco, con su gente.","Los descendientes de Guarco están en Tucurrique y mezclados en Atirro, Cartago y Turrialba. La sangre y las palabras caminan."]},
+ {nombre:'Guía del Zurquí',lineas:["El camino del Cuascuá subía junto al cerro Zurquí hacia Guápiles y Matina. Al otro lado del Tures, la montaña guarda memoria.","Dicen que los chamanes subían con ofrendas y que, cuando la montaña acepta, aparecen mariposas azules."]}
+];
+const MUJERES=[
+ {nombre:'Quisarcó',lineas:["Llevo el nombre de una mujer principal. En el reino de Toyopán las mujeres también tenemos voz en la plaza.","<i>«Ìs be' tso'?»</i> ¿Ves cuánta gente llega? Los nombres que terminan en vocal suenan como canto."]},
+ {nombre:'Tejedora',lineas:["Con fibras de pita tejemos redes y bolsos. <i>¡Bua'ë, bua'ë!</i> Que no falte el abrigo.","Cada hilo se anuda pensando en quien lo va a usar."]},
+ {nombre:'Cocinera',lineas:["Del maíz hacemos tortillas, tamales y chicha. Nadie sale de esta plaza con hambre.","El metate trabaja desde que sale el sol: sin él no hay maíz molido."]},
+ {nombre:'Curandera',lineas:["El llantén sirve para las heridas y el culantro coyote para el estómago. Las plantas de la huerta curan.","Antes de entrar al monte se pide permiso; antes de cortar una planta, también."]},
+ {nombre:'Alfarera',lineas:["Modelo las ollas con las manos y las pinto con tierras de colores, como mi madre.","Los hermanos del sur dicen <i>«Ye' miã́tche»</i> cuando se despiden. A mí me gusta más <i>«bua'ë»</i>."]}
+];
+const gente=[];
+for(let i=0;i<13;i++){const piel=[0x8a5a34,0x7a4a2a,0x9a6a40][i%3],mujer=false;
+ const pj=persona({piel,camisa:mujer?0xe8dcc0:piel,pantalon:piel,falda:[0xc84a2a,0xe8dcc0,0x3a6a8a][i%3],banda:[0xc83a2a,0xe8c040,0x2a5a8a][(i+1)%3],pelo:0x0a0805});
+ const a=Math.random()*6.28,r=3+Math.random()*7;colocar(pj,PX+Math.cos(a)*r,PZ+Math.sin(a)*r);pj.visible=false;const info=HUETARES[i],sp=cartel(info.nombre);sp.position.y=2.9;pj.add(sp);gente.push({p:pj,tx:pj.position.x,tz:pj.position.z,info,dicho:0,muerto:false});}
+
+// ================= MISIONES Y DIÁLOGOS =================
+let fase=0,puestos=0,secreto=0,emergiendo=0,metateListo=false,ultimoUlular=0,cine=null,c2=0,carga=false,convencido=false,bloqueoYa=false,eleccion=null,puestos2=0,rechazo=false,ultHud=0;
+const hud=document.getElementById('hud'),dlg=document.getElementById('dlg'),hint=document.getElementById('hint'),final=document.getElementById('final');
+const mis=["Hablá con el <b>Alférez Zamora</b> (capa roja).","Tomá la <b>merced real</b> (el pergamino).","Pedile consejo al <b>anciano huetar</b>, que conoce estas tierras.",
+"Colocá los <b>3 mojones</b> (siguen las banderas amarillas).","Volvé con el <b>Alférez</b> para contarle.","Llevá la merced al <b>escribano</b> en la casa de teja.","Conseguí los <b>dos testigos</b> que pide el escribano: el <b>arriero</b> y el <b>anciano huetar</b>.",
+"Volvé con el <b>escribano</b> para que asiente las firmas.",
+"El <b>anciano huetar</b> tiene una petición para vos.",
+"Recogé las <b>5 mazorcas</b> de maíz criollo (brillan en el paraje).",
+"Llevá las mazorcas al <b>anciano huetar</b>.",
+"Recorré el viejo <b>camino del Cuascuá</b>: seguí la luz de los hitos.",
+"Volvé con el <b>Alférez</b> para contarle.",
+"<b>¡Misión cumplida!</b> Seguí explorando. Dicen que en lo alto del volcán hay una marca de los antiguos."];
+const misSec={1:"Volvé con el <b>anciano huetar</b>.",2:"Encontrá la <b>tumba de Yorustí</b>, bajo la gran ceiba, al oeste.",3:"Acercate al <b>metate sagrado</b>.",5:"<b>¡La Gran Toyopán vive!</b>"};
+function tgC1(){switch(fase){
+ case 0:case 4:case 12:return alferez;case 1:return pergG;case 2:case 8:case 10:return anciano;
+ case 3:{const m=mojones.find(x=>!x.listo);return m?m.g:null;}
+ case 5:case 7:return escribano;case 6:return !t1?campesino:(!t2?anciano:null);
+ case 9:{const r=mazorcas.filter(x=>!x.listo).sort((p,q)=>d2(p.g)-d2(q.g))[0];return r?r.g:null;}
+ case 11:{const h=hitos.find(x=>!x.listo);return h?h.g:null;}
+ case 13:return [marca,anciano,tumba,metate][Math.min(secreto,3)];}
+ return null;}
+function pinta(){if(c2>0){hud.innerHTML=hudC2();return;}
+ let h="<div style='color:#e8c070;font-size:13px'>MISIÓN "+Math.min(fase+1,13)+"/13</div>"+mis[fase]+(fase==3?"<br>Mojones: "+puestos+"/3":"")
+  +(fase==6?"<br>Testigos: "+((t1?1:0)+(t2?1:0))+"/2":"")+(fase==9?"<br>Mazorcas: "+mazorcas.filter(x=>x.listo).length+"/5":"")+(fase==11?"<br>Hitos: "+hitos.filter(x=>x.listo).length+"/3":"");
+ if(misSec[secreto])h+="<hr><span style='color:#9fe8ff;font-size:13px'>MISIÓN SECRETA</span><br>"+misSec[secreto];
+ const tg=tgC1();if(tg)h+="<br><span style='color:#9fe8ff;font-size:13px'>"+rumbo(tg)+"</span>";
+ hud.innerHTML=h;}
+let dlgT=0,cola=[],dlgEsp=false;
+const sigTxt=()=>(TACTIL?"Tocá aquí para continuar ▸":"[Enter] o clic para continuar ▸")+(cola.length?" ("+cola.length+" más)":"");
+function mostrarDlg(q,t,silencio,dur){dlg.innerHTML="<b>"+q+":</b> "+t+"<span class='sig'>"+sigTxt()+"</span>";dlg.style.display='block';dlg.scrollTop=0;dlgEsp=true;dlgT=(silencio&&dur<=3)?4:0;if(!silencio)sfx.hablar();}
+function decir(q,t,silencio=false,dur=8){if(eleccion||dlgEsp){cola.push([q,t,silencio,dur]);const g=dlg.querySelector('.sig');if(g&&dlgEsp)g.textContent=sigTxt();return;}mostrarDlg(q,t,silencio,dur);}
+function avanzar(){if(eleccion||!dlgEsp)return;dlgEsp=false;dlgT=0;dlg.style.display='none';if(cola.length)mostrarDlg(...cola.shift());}
+function cerrarDlg(){cola=[];dlgEsp=false;dlgT=0;dlg.style.display='none';}
+
+// ================= CONTROLES =================
+const ctr=new PointerLockControls(cam,document.body);const st=document.getElementById('start');
+st.addEventListener('click',()=>{ac();bloquear();});
+ctr.addEventListener('lock',()=>st.style.display='none');
+ctr.addEventListener('unlock',()=>{if(!cine)st.style.display='flex';});
+cam.position.set(0,altura(0,6)+1.7,6);
+const k={};let vy=0,suelo=true;
+addEventListener('keydown',e=>{if(eleccion&&/^Digit[1-5]$/.test(e.code)){elegirOpcion(+e.code.slice(5)-1);return;}k[e.code]=1;if(e.code=='Enter'||e.code=='NumpadEnter'){avanzar();return;}if(e.code=='KeyE')usar();if(e.code=='Space')saltar();});
+addEventListener('keyup',e=>k[e.code]=0);
+let jugT=false,correrT=false;const activo=()=>ctr.isLocked||jugT;
+function saltar(){if(suelo&&activo()&&!carga&&!eleccion){vy=6;suelo=false;sfx.saltar();}}
+function bloquear(){if(TACTIL){jugT=true;st.style.display='none';document.body.classList.add('jugando');try{if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});}catch(_){}}else ctr.lock();}
+function pausar(){if(TACTIL){if(!jugT)return;jugT=false;for(const c in k)k[c]=0;soltarJoy();document.body.classList.remove('jugando');ctr.dispatchEvent({type:'unlock'});}else ctr.unlock();}
+// clic: elegir respuesta o pasar el diálogo
+addEventListener('click',e=>{const op=e.target.closest&&e.target.closest('#dlg .op');if(op&&eleccion){elegirOpcion(+op.dataset.i);return;}
+ if(dlgEsp&&(ctr.isLocked||cine||(e.target.closest&&e.target.closest('#dlg'))))avanzar();});
+// joystick y botones táctiles
+const joy=document.getElementById('joy'),joyB=document.getElementById('joyB'),joyV={x:0,y:0};let joyId=null;
+function moverJoy(e){const r=joy.getBoundingClientRect();let x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2);const m=Math.hypot(x,y);if(m>1){x/=m;y/=m;}
+ joyV.x=x;joyV.y=y;joyB.style.transform='translate('+x*37+'px,'+y*37+'px)';}
+function soltarJoy(){joyId=null;joyV.x=joyV.y=0;joyB.style.transform='';}
+joy.addEventListener('pointerdown',e=>{e.preventDefault();joyId=e.pointerId;try{joy.setPointerCapture(e.pointerId);}catch(_){}moverJoy(e);});
+joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)moverJoy(e);});
+['pointerup','pointercancel','lostpointercapture'].forEach(n=>joy.addEventListener(n,e=>{if(e.pointerId===joyId)soltarJoy();}));
+const boton=(id,fn)=>document.getElementById(id).addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();ac();fn();});
+boton('bE',()=>usar());boton('bS',saltar);boton('bP',pausar);
+boton('bC',()=>{correrT=!correrT;document.getElementById('bC').classList.toggle('on',correrT);});
+// deslizar el dedo para mirar
+const dedos=new Map(),eul=new THREE.Euler(0,0,0,'YXZ');
+R.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;dedos.set(e.pointerId,[e.clientX,e.clientY]);});
+R.domElement.addEventListener('pointermove',e=>{const p=dedos.get(e.pointerId);if(!p)return;const dx=e.clientX-p[0],dy=e.clientY-p[1];p[0]=e.clientX;p[1]=e.clientY;
+ if(!jugT||cine)return;eul.setFromQuaternion(cam.quaternion);eul.y-=dx*.0065;eul.x=Math.max(-1.45,Math.min(1.45,eul.x-dy*.0065));cam.quaternion.setFromEuler(eul);});
+['pointerup','pointercancel','pointerleave'].forEach(n=>R.domElement.addEventListener(n,e=>dedos.delete(e.pointerId)));
+const d2=o=>Math.hypot(cam.position.x-o.position.x,cam.position.z-o.position.z);
+function objetivoCercano(){if(c2>0)return objetivoC2();
+ if(d2(alferez)<3.5)return 'alferez';if(d2(anciano)<3.5)return 'anciano';if(d2(escribano)<3.5)return 'escribano';if(d2(campesino)<3.5)return 'campesino';
+ if(pergG.visible&&d2(pergG)<2.5)return 'perg';
+ if(d2(marca)<3)return 'marca';
+ if(metateListo&&secreto==3&&d2(metate)<3)return 'metate';
+ if(tumba.visible&&secreto==2&&d2(tumba)<4.5)return 'tumba';
+ for(const m of mojones)if(m.g.visible&&!m.listo&&d2(m.g)<3)return m;return null;}
+
+function usar(){if(!activo()||cine||eleccion)return;const o=objetivoCercano();if(!o){avanzar();return;}cerrarDlg();if(c2>0){usarC2(o);pinta();return;}if(usarExtra(o)){pinta();return;}
+ if(o==='alferez'){if(fase==0){decir("Alférez Zamora","¡Buen día, muchacho! Su Majestad me ha concedido tierras en este paraje del Tibás. Tomá la merced que dejé allí, a mi derecha, y ayudame a marcar los linderos.");fase=1;}
+  else if(fase==4){decir("Alférez Zamora","¡Excelente trabajo! Ahora llevá la merced al escribano, para que quede asentada en papel con testigos.");fase=5;}
+  else decir("Alférez Zamora","Vine desde Marchena, en España. Esta tierra es fértil, pero sin papeles en regla nada es seguro.");}
+ else if(o==='perg'){if(fase==1){pergG.visible=false;sfx.recoger();chispas(pergG.position,0xfff0c0);decir("Narrador","Recogiste la merced real: el documento con el que el rey cede las tierras.",true);fase=2;}
+  else decir("Narrador","Primero hablá con el Alférez.");}
+ else if(o==='anciano'){
+  if(fase==2){decir("Anciano huetar","Mi gente caminó estos montes desde los tiempos del cacique Yorustí, señor de la Gran Toyopán. El rey dice que da esta tierra, como si fuera suya. La tierra no se da ni se vende: todos somos parte de ella. Pero si van a poner piedras, que se sepa dónde: junto al río, hacia el monte y hacia el sur.");fase=3;mojones.forEach(m=>m.g.visible=true);}
+  else if(secreto==1){secreto=2;tumba.visible=true;sfx.mistico();chispas(tumba.position.clone().add(new THREE.Vector3(0,1,0)),0x9fe8ff,40);
+   decir("Anciano huetar","Encontraste la marca de los antiguos... Entonces llegó la hora. Al oeste, bajo la gran ceiba, descansa Yorustí, señor de la Gran Toyopán. Andá a su tumba y decí la oración. Si la tierra te escucha, despertará lo que estaba dormido.",true,11);}
+  else if(secreto==0)decir("Anciano huetar","El río Tures da agua a todos. Y dicen que en lo alto del volcán quedó una marca de los antiguos...");
+  else if(secreto>=5)decir("Anciano huetar","¡La Gran Toyopán vive otra vez! Gracias, muchacho.");
+  else decir("Anciano huetar","Andá a la gran ceiba, al oeste. Yorustí te espera.");}
+ else if(o==='escribano'){if(fase==5){decir("Escribano","Queda asentado en el protocolo, con firma y testigos. Algún día, alguien leerá estos papeles para saber de quién fue cada tierra.");fase=6;sfx.fanfarria();
+   const c=escribano.position.clone().add(new THREE.Vector3(0,2,0));chispas(c,0x88ddff,40);luego(.6,()=>chispas(c,0xffdd55,40));luego(1.5,()=>chispas(c,0xff7a9a,40));luego(2.5,()=>chispas(c,0xffffff,50));}
+  else decir("Escribano","Sin documento no hay registro. Así es la ley.");}
+ else if(o==='campesino')decir("Arriero","Llevo mulas y bueyes por el camino real hasta Cartago. Dicen que hay recuas que van hasta Panamá. ¡Qué lejos!");
+ else if(o==='marca'){if(secreto==0){secreto=1;sfx.mistico();chispas(marca.position.clone().add(new THREE.Vector3(0,1,0)),0x9fe8ff,50);
+   decir("Narrador","Una espiral tallada en la piedra brilla bajo tus manos. El viento trae la voz del anciano huetar: «Bajá, muchacho. Tengo algo que contarte.»",true,9);}
+  else decir("Narrador","La espiral sigue brillando débilmente.");}
+ else if(o==='tumba'){secreto=3;sfx.oracion();
+  decir("Oración","«Abuelo Yorustí, señor de la Gran Toyopán: la tierra recuerda, el agua recuerda, el maíz recuerda. Que despierte lo que estaba dormido.»",true,7);
+  luego(3,()=>{metate.visible=true;emergiendo=reloj.elapsedTime;sfx.mistico();chispas(new THREE.Vector3(metX,metY+.5,metZ),0x9fe8ff,60);});
+  luego(6.3,()=>{sfx.lechuza();decir("Narrador","De la tierra surge el metate sagrado, y sobre él se posa una lechuza. Acercate.",true);});}
+ else if(o==='metate')transformar();
+ else if(o.g&&fase==3){o.listo=true;puestos++;o.s.visible=false;sfx.mojon();chispas(o.g.position.clone().add(new THREE.Vector3(0,1,0)));
+  decir("Narrador","¡Mojón colocado! Las piedras marcaban dónde terminaba cada propiedad.",true);if(puestos==3)fase=4;}
+ pinta();}
+
+// ================= LA GRAN TOYOPÁN =================
+const crecer=[];
+function transformar(){secreto=5;pinta();sfx.lechuza();
+ cine={t0:reloj.elapsedTime,desde:cam.position.clone(),tipo:'cap1'};scene.fog.near=180;scene.fog.far=520;
+ pausar();hud.style.display='none';cerrarDlg();hint.style.display='none';document.getElementById('mira').style.display='none';
+ etiquetas.forEach(s=>s.visible=false);
+ luego(1.5,()=>{sfx.fanfarria();
+  arboles.forEach(a=>{if(Math.hypot(a.position.x-PX,a.position.z-PZ)<24)a.visible=false;});
+  mojones.forEach(m=>m.g.visible=false);pergG.visible=false;fogata.visible=true;
+  casas.forEach((c,i)=>{c.visible=true;crecer.push({o:c,t0:reloj.elapsedTime+i*.45,d:2.4});luego(i*.45,()=>{chispas(c.position.clone().add(new THREE.Vector3(0,1,0)),0xffcc66,35,.25,1.5);sfx.boom();});});});
+ luego(4.2,()=>gente.forEach((g,i)=>luego(i*.12,()=>{g.p.visible=true;chispas(g.p.position.clone().add(new THREE.Vector3(0,1,0)),0xffaa55,15,.15);})));
+ luego(5.5,()=>sfx.lechuza());
+ for(let i=0;i<7;i++)luego(9+i*.8,()=>{const c=new THREE.Vector3(PX+(Math.random()-.5)*40,altura(PX,PZ)+28+Math.random()*12,PZ+(Math.random()-.5)*40);
+  chispas(c,[0xffdd55,0xff6a8a,0x9fe8ff,0xffffff,0xc070ff][i%5],45,1.2,4);sfx.boom();});
+ luego(10.5,()=>{cine.listo=true;sfx.fanfarria();final.style.display='flex';requestAnimationFrame(()=>requestAnimationFrame(()=>final.style.opacity=1));});}
+// ================= MISIONES EXTRA DEL CAPÍTULO I =================
+let t1=false,t2=false,ali=0;
+const mazorcas=[[-45,-25],[25,-55],[-75,15],[30,45],[-5,75]].map(([x,z])=>{const g=new THREE.Group();
+ const m=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,.6,8),M(0xffcc33,{emissive:0xffaa00,emissiveIntensity:.5}));m.position.y=.55;m.rotation.z=.5;
+ const h=new THREE.Mesh(new THREE.ConeGeometry(.2,.5,6),M(0x5a9a3a));h.position.set(-.12,.25,0);h.rotation.z=.5;
+ const luz=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,6,6),new THREE.MeshBasicMaterial({color:0xffdd55,transparent:true,opacity:.35}));luz.position.y=3;
+ g.add(m,h);sh(g);g.add(luz);colocar(g,x,z);g.visible=false;return {g,listo:false};});
+const hitos=[
+ [-70,-5,"Aquí pasa el camino del Cuascuá, la ruta indígena que va de Quepo y Orotina hasta Santo Domingo y Matina. Quien entra al monte pide permiso."],
+ [-30,-85,"Por este camino se intercambiaban sal, tortuga, plumas, cerámica policroma de Nicaragua y Guanacaste... y oro."],
+ [30,-70,"Los indígenas hacían un residencial cada cinco kilómetros, en el bosque, a un día o medio día de camino. Acabás de recorrer una jornada."]
+].map(([x,z,txt])=>{const g=new THREE.Group();
+ for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const pd=new THREE.Mesh(new THREE.DodecahedronGeometry(.45,0),M(0x8a8a80));pd.position.set(Math.cos(a)*.9,.3,Math.sin(a)*.9);g.add(pd);}
+ const pil=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,2.4,6),M(0x6b4423));pil.position.y=1.2;
+ const haz=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,70,10,1,true),new THREE.MeshBasicMaterial({color:0xffc860,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));haz.position.y=35;
+ sh(g);g.add(pil,haz);const sc=cartel('Camino del Cuascuá','#ffd890');sc.position.y=3.6;g.add(sc);colocar(g,x,z);g.visible=false;return {g,listo:false,txt};});
+function usarExtra(o){
+ if(o==='escribano'&&fase==5){fase=6;t1=t2=false;decir("Escribano","La merced está en regla... casi. Toda escritura necesita dos testigos que firmen o pongan su cruz. Traé al arriero y al anciano huetar.",false,10);return true;}
+ if(fase==6&&(o==='campesino'||o==='anciano')){
+  if(o==='campesino'){t1=true;decir("Arriero","¿Testigo yo? No sé firmar, pero pongo mi cruz. Eso sí: la tierra tenía gente mucho antes de tener papeles.",false,9);}
+  else{t2=true;decir("Anciano huetar","Pondré mi huella, pero que quede claro: la tierra no es de nadie. Es un ser vivo, y de su sangre se alimenta el mundo. La montaña, el río, las plantas y nosotros somos parte del mismo tejido: cumplimos un encargo, no somos dueños.",false,9);}
+  if(t1&&t2){fase=7;sfx.recoger();luego(9.2,()=>decir("Narrador","Ya tenés a los dos testigos. Volvé con el escribano.",true,5));}
+  return true;}
+ if(fase==7&&o==='escribano'){decir("Escribano","Firmado con las cruces y la huella de los testigos. Queda asentado en el protocolo. Algún día, alguien leerá estos papeles para saber de quién fue cada tierra.",false,10);fase=8;sfx.fanfarria();
+  const c=escribano.position.clone().add(new THREE.Vector3(0,2,0));chispas(c,0x88ddff,40);luego(.6,()=>chispas(c,0xffdd55,40));luego(1.5,()=>chispas(c,0xff7a9a,40));luego(2.5,()=>chispas(c,0xffffff,50));return true;}
+ if(fase==8&&o==='anciano'){fase=9;mazorcas.forEach(m=>m.g.visible=!m.listo);decir("Anciano huetar","Muchacho, firmaste el papel de la tierra. Ahora ayudame con la tierra misma: las mazorcas de maíz criollo se dispersaron por el paraje y sin semilla no hay milpa. Buscá cinco; brillan.",false,12);return true;}
+ if(fase==9&&o==='anciano'){decir("Anciano huetar","Cinco mazorcas de maíz criollo, muchacho. Buscá las que brillan en el paraje. Llevás "+mazorcas.filter(x=>x.listo).length+".");return true;}
+ if(fase==10&&o==='anciano'){fase=11;hitos[0].g.visible=true;sfx.recoger();decir("Anciano huetar","Con esta semilla habrá milpa y habrá memoria. Una cosa más: recorré el viejo camino del Cuascuá para que la tierra te conozca. Seguí la luz de los hitos.",false,12);return true;}
+ if(fase==11&&o==='anciano'){decir("Anciano huetar","Seguí la luz del camino, muchacho. Son tres hitos.");return true;}
+ if(fase==12&&o==='alferez'){fase=13;sfx.fanfarria();decir("Alférez Zamora","Papeles firmados, semilla guardada y el camino recorrido: el paraje te conoce, muchacho. Me quedo tranquilo. Dicen que el anciano huetar guarda otros secretos; hablá con él.",false,12);return true;}
+ if(o==='marca'&&fase<13&&secreto==0){decir("Narrador","La espiral está apagada y no responde. Quizá todavía falten cosas por hacer en el paraje.",true);return true;}
+ return false;}
+
+// ================= CAPÍTULO II: LA GRAN TOYOPÁN =================
+const errantes=[],hablados=new Set(),crecer2=[],mariposas=[];
+const velo=document.getElementById('velo');
+const TEXTO_C2=adaptar("<h1>Capítulo II<br>La Gran Toyopán</h1><p>La Gran Toyopán vive otra vez. Hablá con su gente, escuchá sus palabras... y recordá que cada decisión tiene consecuencias.</p><p>WASD: caminar · Shift: correr · Espacio: saltar · E: interactuar · Enter o clic: avanzar diálogo · 1-5: elegir respuesta · Esc: pausa</p><p><b>Clic para continuar</b></p>");
+sfx.erupcion=()=>{tono(55,0,3,'sawtooth',.35,22);tono(90,.2,2.5,'square',.15,30);sfx.boom();};
+
+// cuatro mojones nuevos alrededor de la Gran Toyopán (solo aparecen si se acepta la orden del Alférez)
+const mojones2=[0,1,2,3].map(i=>{const a=i/4*Math.PI*2+Math.PI/4;return hacerMojon([PX+Math.cos(a)*38,PZ+Math.sin(a)*38,'Nuevo lindero']);});
+
+// cima del Zurquí
+const cima=new THREE.Group();
+{const base=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.8,.5,12),M(0x6a6a62));base.position.y=.25;cima.add(base);
+ for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const pd=new THREE.Mesh(new THREE.DodecahedronGeometry(.5,0),M(0x8a8a80));pd.position.set(Math.cos(a)*3.2,.4,Math.sin(a)*3.2);cima.add(pd);}
+ const haz=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,90,10,1,true),new THREE.MeshBasicMaterial({color:0x6ad0ff,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));haz.position.y=45;
+ const sc=cartel('Cima del Zurquí','#9fe8ff');sc.position.y=4;
+ sh(cima);cima.add(haz,sc);colocar(cima,ZX,ZZ);cima.visible=false;}
+
+// Turú Hüá, la princesa huetar
+const turu=persona({piel:0xb87c52,camisa:0xf0e8d0,pantalon:0x2a6ae0,falda:0x2a6ae0,banda:0xffd23a,pelo:0x0a0805,capa:0x2a6ae0,larga:true});
+{const sp=cartel('Turú Hüá','#9fe8ff');sp.position.y=2.9;turu.add(sp);}
+colocar(turu,ZX+3.8,ZZ+1.5);turu.visible=false;
+
+// mariposas morpho
+function crearMorpho(){const g=new THREE.Group();const mat=new THREE.MeshBasicMaterial({color:0x1f6bff,side:THREE.DoubleSide}),mat2=new THREE.MeshBasicMaterial({color:0x7fd8ff,side:THREE.DoubleSide});
+ const ala=s=>{const w=new THREE.Group();const a=new THREE.Mesh(new THREE.PlaneGeometry(.55,.4),mat);a.rotation.x=-Math.PI/2;a.position.set(.28*s,0,0);w.add(a);
+  const b=new THREE.Mesh(new THREE.PlaneGeometry(.3,.12),mat2);b.rotation.x=-Math.PI/2;b.position.set(.2*s,.01,.02);w.add(b);g.add(w);return w;};
+ const wl=ala(-1),wr=ala(1);g.add(new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.3),new THREE.MeshBasicMaterial({color:0x111122})));return {g,wl,wr};}
+function soltarMorphos(centro,n,radio){for(let i=0;i<n;i++){const m=crearMorpho();m.c=centro.clone();m.ph=Math.random()*6.28;m.r=radio*(.3+Math.random()*.9);m.h=1+Math.random()*10;m.w=.4+Math.random()*.6;scene.add(m.g);mariposas.push(m);}}
+
+// luz de la erupción
+const lava=new THREE.PointLight(0xff4a10,0,300);lava.position.set(VX,altura(VX,VZ)+6,VZ);scene.add(lava);
+
+// río más caudaloso
+let rioK=0,rioT0=0,rioOx=null;
+function ensancharRio(k){const rp=rio.geometry.attributes.position;
+ if(!rioOx){rioOx=new Float32Array(rp.count);for(let i=0;i<rp.count;i++)rioOx[i]=rp.getX(i)-rioX(rp.getZ(i));}
+ for(let i=0;i<rp.count;i++)rp.setX(i,rioX(rp.getZ(i))+rioOx[i]*k);rp.needsUpdate=true;}
+
+// ---------- utilidades de interfaz ----------
+function elegir(q,t,opts){dlg.innerHTML="<b>"+q+":</b> "+t+"<br>"+opts.map((o,i)=>"<span class='op' data-i='"+i+"'>["+(i+1)+"] "+o.t+"</span>").join("");dlg.style.display='block';dlg.scrollTop=0;dlgT=0;dlgEsp=false;eleccion=opts;sfx.hablar();}
+function elegirOpcion(i){if(!eleccion||!eleccion[i])return;const o=eleccion[i];eleccion=null;dlg.style.display='none';o.fn();if(!dlgEsp&&!eleccion&&cola.length)mostrarDlg(...cola.shift());pinta();}
+function mostrarFinal(html,peq){if(peq&&TACTIL)peq=peq.replace(/^Clic/,'Tocá');final.innerHTML=html+(peq?"<small>"+peq+"</small>":"");final.style.display='flex';requestAnimationFrame(()=>requestAnimationFrame(()=>final.style.opacity=1));}
+function ocultarHud(){hud.style.display='none';cerrarDlg();hint.style.display='none';document.getElementById('mira').style.display='none';etiquetas.forEach(s=>s.visible=false);}
+const NOMBRES8=['N','NE','E','SE','S','SO','O','NO'];
+function rumbo(o){const dx=o.position.x-cam.position.x,dz=o.position.z-cam.position.z,dist=Math.round(Math.hypot(dx,dz));
+ const nom=a=>NOMBRES8[(Math.round(a/(Math.PI/4))%8+8)%8];const dir=new THREE.Vector3();cam.getWorldDirection(dir);
+ return "Brújula: "+nom(Math.atan2(dx,-dz))+" · "+dist+" m &nbsp;(mirás al "+nom(Math.atan2(dir.x,-dir.z))+")";}
+function otrosHablados(){let n=0;hablados.forEach(g=>{if(g!==gente[0])n++;});return n;}
+
+function hudC2(){let m="",tg=null;
+ if(c2==1){const n=otrosHablados();if(n<4)m="Hablá con la gente de la <b>Gran Toyopán</b> ("+n+"/4). Cada huetar tiene algo que contarte.";else{m="Ya conocés a varios. <b>Turial</b> quiere pedirte algo.";tg=gente[0].p;}}
+ else if(c2==2){m="Turial te pidió averiguar qué trama el <b>Alférez Zamora</b>.";tg=alferez;}
+ else if(c2==3){m="Colocá los <b>4 mojones nuevos</b> alrededor de la Gran Toyopán: "+puestos2+"/4";const f=mojones2.find(x=>!x.listo);tg=f?f.g:null;}
+ else if(c2==4){m="El Alférez te dio la espalda. Buscá al <b>anciano huetar</b>.";tg=anciano;}
+ else if(c2==5){m="Recogé el <b>metate sagrado</b>, junto a la tumba de Yorustí.";tg=metate;}
+ else if(c2==6){m="Cruzá el <b>río Tures</b> con el metate. Un arriero va a interponerse.";tg={position:{x:rioX(cam.position.z)+6,z:cam.position.z}};}
+ else if(c2==7){m="Subí el metate hasta la cima del <b>cerro Zurquí</b>.";tg=cima;}
+ else if(c2==9){m="Algo cambió en el <b>Alférez Zamora</b>: quiere hablarte.";tg=alferez;}
+ else if(c2>=10)m="<b>Capítulo II completado.</b> El Alférez es ahora aliado de los huetares. Seguí explorando: la gente del reino de Toyopán todavía tiene historias.";
+ return "<div style='color:#e8c070;font-size:13px'>CAPÍTULO II · LA GRAN TOYOPÁN</div>"+m+(tg?"<br><span style='color:#9fe8ff;font-size:13px'>"+rumbo(tg)+"</span>":"");}
+
+// ---------- interacciones ----------
+function objetivoC2(){if(c2>=20)return null;
+ if(d2(alferez)<3.5)return {tipo:'alferez'};if(d2(anciano)<3.5)return {tipo:'anciano'};if(d2(escribano)<3.5)return {tipo:'escribano'};if(d2(campesino)<3.5)return {tipo:'campesino'};
+ let mg=null,md=3;gente.forEach(g=>{if(g.p.visible&&!g.muerto){const d=d2(g.p);if(d<md){md=d;mg=g;}}});if(mg)return {tipo:'huetar',g:mg};
+ if(c2==3)for(const m of mojones2)if(!m.listo&&d2(m.g)<3)return {tipo:'mojon2',m};
+ if(c2==5&&d2(metate)<3.5)return {tipo:'metate'};
+ if(c2==7&&carga&&d2(cima)<4.5)return {tipo:'cima'};
+ return null;}
+
+function hablarHuetar(g){const I=g.info;
+ if(c2==3){decir(I.nombre,"¿Por qué clavan piedras alrededor de nuestras casas? ¿Nos quieren encerrar?",false,7);return;}
+ hablados.add(g);
+ if(g===gente[0]&&c2==1&&otrosHablados()>=4){c2=2;decir("Turial","Gracias por escucharlos, muchacho. Ahora necesito tu ayuda: el Alférez Zamora anda por el paraje con la cuerda de medir y cara de pocos amigos. Andá a ver qué trama.",false,11);return;}
+ const l=I.lineas[g.dicho%I.lineas.length];g.dicho++;
+ decir(I.nombre,l+(g===gente[0]&&c2==1?"<br><i>Hablá primero con los demás: cada uno guarda un pedazo de nuestra historia.</i>":""),false,11);}
+
+function ofertaAlferez(){elegir("Alférez Zamora","Muchacho, la Corona quiere los linderos bien cerrados. Esos indios de la Gran Toyopán no tienen papel ni merced: pongamos cuatro mojones nuevos alrededor de su pueblo y que nadie entre ni salga más. ¿Me ayudás?",[
+ {t:"Aceptar: colocar los mojones y aislar a los huetares.",fn:()=>{c2=3;puestos2=0;mojones2.forEach(m=>{m.g.visible=true;m.listo=false;m.s.visible=true;});decir("Alférez Zamora","¡Así se habla! Cuatro mojones alrededor de la plaza. Que quede asentado.",false,7);}},
+ {t:"Rechazar: no voy a encerrar a esa gente.",fn:()=>{c2=4;rechazo=true;const w=errantes.find(x=>x.id==='alferez');if(w)w.fijo=true;
+   decir("Alférez Zamora","¿Rechazás una orden del rey? Pues andate con tus indios, muchacho.",false,5);
+   luego(5.2,()=>{decir("Narrador","El Alférez se da la vuelta y te da la espalda. Quizá el anciano huetar sepa qué hacer.",true,8);});}}]);}
+
+const PALABRAS=[
+ {w:'miã́tche',eco:'«Miã́tche» significa «me voy», «hasta luego». ¿Me estás despidiendo? Yo soy el que te despide a vos.'},
+ {w:'kie',eco:'«Kie» es «nombre». Ya sé cómo te llamás, muchacho; no es eso lo que busco.'},
+ {w:"bua'ë",ok:true},
+ {w:'ìs',eco:'«Ìs»... un saludo corto. Un saludo no basta para cruzar con esa piedra.'},
+ {w:'dör',eco:'«Dör» es «ser, es». No dice nada, muchacho.'}];
+function mostrarPalabras(q,t){const ps=PALABRAS.slice().sort(()=>Math.random()-.5);elegir(q,t,ps.map(p=>({t:"«"+p.w+"»",fn:()=>responderPalabra(p)})));}
+function arrieroBloquea(){bloqueoYa=true;const x=rioX(cam.position.z)-7,z=cam.position.z;
+ campesino.position.set(x,altura(x,z),z);chispas(campesino.position.clone().add(new THREE.Vector3(0,1,0)),0xc8a860,20,.15);
+ mostrarPalabras("Arriero","¡Alto ahí, muchacho! Ese metate no cruza el Tures. Lo que va a la otra orilla se queda en la otra orilla... a menos que me convenzas. Y que sea en bribri, la lengua de los de Talamanca. ¿Qué palabra me decís?");}
+function responderPalabra(p){
+ if(p.ok){convencido=true;c2=7;bloqueoYa=false;sfx.recoger();decir("Arriero","«Bua'ë»... Hacía años que no oía esa palabra bien dicha. Pasá, muchacho. Que el metate llegue arriba.",false,9);}
+ else{decir("Arriero",p.eco,false,4);luego(4,()=>{if(c2==6&&!convencido)mostrarPalabras("Arriero","Probá otra vez. Una palabra buena, muchacho.");});}}
+
+const LINEAS_ALIADO=[
+ "Le escribí al rey: para los huetares la tierra no es de nadie. Es un ser vivo que alimenta al mundo, y a ella se le debe cuidado, no mojones.",
+ "Ellos me enseñaron a pedir permiso al monte antes de entrar. Ahora lo hago yo también, muchacho.",
+ "Quieren paz y el bienestar de todos: de la gente, del agua, de los árboles y hasta del último colibrí. Y tienen razón.",
+ "Hay sequías que ningún rey manda ni detiene, pero ellos leen las señales: saben cuándo sembrar y cuándo cuidar el agua. Aprendo de ellos cada día.",
+ "Casi les cierro el camino con mis propias piedras. Ellos me enseñaron que no somos dueños de nada: cumplimos un encargo. Hoy camino a su lado."];
+function redencionAlferez(){c2=10;
+ decir("Alférez Zamora","Muchacho... vi las mariposas azules sobre la Gran Toyopán, vi crecer los árboles y subir el río, y entendí lo que casi hice: cercar a esta gente con mojones.",false,8);
+ luego(8.5,()=>decir("Alférez Zamora","Ellos saben cuándo llover y cuándo sembrar, cómo cuidar el agua y el monte. Esa sabiduría evita el hambre, la sequía y el desastre. Yo medía la tierra; ellos cuidan la vida.",true,9));
+ luego(18,()=>decir("Alférez Zamora","Me equivoqué. Desde hoy soy aliado de los huetares. Lo que ellos quieren es paz y el bienestar de todas las personas y de los demás seres: el agua, los árboles, los animales.",true,10));
+ luego(28.5,()=>{sfx.recoger();decir("Narrador","El Alférez Zamora es ahora aliado de los huetares. Fin del capítulo II.",true,7);});
+ const w=errantes.find(e=>e.id==='alferez');if(w){w.tx=PX+6;w.tz=PZ+6;w.esp=4;}
+ pinta();guardar();}
+function usarC2(o){switch(o.tipo){
+ case 'huetar':hablarHuetar(o.g);break;
+ case 'alferez':
+  if(c2==9)redencionAlferez();
+  else if(c2>=10)decir("Alférez Zamora",LINEAS_ALIADO[ali++%LINEAS_ALIADO.length],false,11);
+  else if(c2==2)ofertaAlferez();
+  else if(c2==1)decir("Alférez Zamora","Ahora no, muchacho. Conocé primero a esa gente; algo me ronda la cabeza y todavía no sé si me gusta.");
+  else if(c2==3)decir("Alférez Zamora","¿Qué esperás? Faltan "+(4-puestos2)+" mojones. Nadie debe entrar ni salir de ese pueblo.");
+  else if(rechazo)decir("Narrador","El Alférez mantiene la espalda vuelta. No piensa hablarte.",true);
+  else decir("Alférez Zamora","Vine desde Marchena, en España. Esta tierra es fértil, pero sin papeles en regla nada es seguro.");
+  break;
+ case 'anciano':
+  if(c2==4){c2=5;decir("Anciano huetar","Mal gesto el del Alférez, pero vos hiciste lo justo. Escuchá: el metate sagrado tiene que volver a la montaña. Llevalo al otro lado del río Tures y subilo hasta la cima del cerro Zurquí. Un arriero te va a cerrar el paso; no lo vas a vencer con fuerza. Acordate de lo que dicen los del reino de Toyopán cuando algo es bueno.",false,16);}
+  else if(c2==3)decir("Anciano huetar","¿Qué son esas piedras? Los linderos de papel no pueden cercar a un pueblo vivo, muchacho.");
+  else if(c2>=5&&c2<=7)decir("Anciano huetar","El metate espera junto a la tumba de Yorustí. Al otro lado del Tures está el Zurquí; allá la montaña acepta, o no acepta.");
+  else if(c2>=9)decir("Anciano huetar","La Gran Toyopán vive de nuevo, y con ella las palabras. Bua'ë, muchacho.");
+  else decir("Anciano huetar","Mi gente caminó estos montes desde los tiempos de Yurustí. Andá, hablá con ellos.");
+  break;
+ case 'escribano':decir("Escribano",c2==3?"Cercar un pueblo con mojones... eso no figura en ninguna merced, muchacho. Pensalo bien.":"Sin documento no hay registro. Así es la ley.");break;
+ case 'campesino':decir("Arriero",c2>=7?"Pasá, pasá. «Bua'ë».":"Llevo mulas y bueyes por el camino real hasta Cartago. ¡Qué lejos!");break;
+ case 'mojon2':{const m=o.m;m.listo=true;puestos2++;m.s.visible=false;sfx.mojon();chispas(m.g.position.clone().add(new THREE.Vector3(0,1,0)));
+  decir("Narrador","Un lindero más: la Gran Toyopán queda cercada.",true);if(puestos2==4)luego(1.2,desastre);break;}
+ case 'metate':carga=true;c2=6;bloqueoYa=false;sfx.recoger();metate.children[metate.children.length-1].visible=false;cima.visible=true;
+  chispas(metate.position.clone().add(new THREE.Vector3(0,1,0)),0x9fe8ff,30);
+  decir("Narrador","Cargás el metate sagrado. Pesa, pero lo sentís vivo: caminás más lento y no podés saltar.",true,8);break;
+ case 'cima':cimaEvento();break;
+}}
+
+// ---------- final bueno ----------
+function cimaEvento(){carga=false;c2=8;
+ cine={t0:reloj.elapsedTime,tipo:'cima'};pausar();ocultarHud();
+ metate.position.set(ZX,cima.position.y+.5,ZZ);metate.rotation.set(0,0,0);
+ sfx.mistico();chispas(cima.position.clone().add(new THREE.Vector3(0,2,0)),0x9fe8ff,60,.2,2);
+ luego(1,()=>{sfx.mistico();soltarMorphos(cima.position.clone(),46,9);});
+ luego(3,()=>{turu.visible=true;chispas(turu.position.clone().add(new THREE.Vector3(0,1,0)),0x6ad0ff,40,.2,2);sfx.lechuza();});
+ luego(4.5,()=>decir("Turú Hüá","Soy Turú Hüá, hija de este pueblo. Hace siglos que esperaba que alguien trajera el metate de vuelta a la montaña.",true,5));
+ luego(10,()=>decir("Turú Hüá","Con la memoria viva, la Gran Toyopán volverá a crecer. Mirá hacia el valle.",true,4));
+ luego(14,crecimientoToyopan);}
+
+function aparecenMujeres(){for(let i=0;i<10;i++){const piel=[0x8a5a34,0x7a4a2a,0x9a6a40][i%3];
+ const pj=persona({piel,camisa:0xf0e8d0,pantalon:piel,falda:[0xc84a2a,0x3a6a8a,0xe8c040,0x6a2a6a][i%4],banda:[0xc83a2a,0xe8c040,0x2a5a8a][i%3],pelo:0x0a0805,larga:true});
+ const a=Math.random()*6.28,r=3+Math.random()*9,info=MUJERES[i%MUJERES.length];colocar(pj,PX+Math.cos(a)*r,PZ+Math.sin(a)*r);
+ const sp=cartel(info.nombre);sp.position.y=2.9;sp.visible=false;pj.add(sp);
+ const g={p:pj,tx:pj.position.x,tz:pj.position.z,info,dicho:0,muerto:false,v:1.6,esp:Math.random()*3};gente.push(g);errantes.push(g);
+ luego(i*.2,()=>chispas(pj.position.clone().add(new THREE.Vector3(0,1,0)),0xffaa55,15,.15));}}
+function crecerArboles(){let n=0;while(n<160){const x=(Math.random()-.5)*340,z=(Math.random()-.5)*340;
+ if(Math.hypot(x-PX,z-PZ)<20||Math.abs(x-rioX(z))<12||Math.hypot(x-VX,z-VZ)<VR*.55||Math.hypot(x-TX,z-TZ)<10||Math.hypot(x-ZX,z-ZZ)<8)continue;
+ arbol(x,z);const a=arboles[arboles.length-1];a.scale.setScalar(.01);crecer2.push({o:a,t0:reloj.elapsedTime+Math.random()*3,d:3.5});n++;}}
+
+function crecimientoToyopan(){cine={t0:reloj.elapsedTime,tipo:'cap2',desde:cam.position.clone(),d1:5};cerrarDlg();sfx.mistico();
+ mariposas.forEach(m=>{m.dest=new THREE.Vector3(PX+(Math.random()-.5)*30,altura(PX,PZ),PZ+(Math.random()-.5)*30);});
+ let k=0;[[6,24,1.15],[4,34,1.35]].forEach(([n,r,esc],j)=>{for(let i=0;i<n;i++){const a=i/n*Math.PI*2+j*.5+.6,x=PX+Math.cos(a)*r,z=PZ+Math.sin(a)*r;
+  arboles.forEach(ar=>{if(Math.hypot(ar.position.x-x,ar.position.z-z)<7)ar.visible=false;});
+  const c=nuevaCasa(x,z,esc);c.visible=true;luego(1+k*.45,()=>{crecer.push({o:c,t0:reloj.elapsedTime,d:2.2});chispas(c.position.clone().add(new THREE.Vector3(0,1,0)),0xffcc66,30,.25,1.5);sfx.boom();});k++;}});
+ luego(4,aparecenMujeres);luego(5,crecerArboles);luego(5,()=>{rioT0=reloj.elapsedTime;});
+ luego(5.5,()=>{sfx.fanfarria();mostrarFinal("La tradición y la sabiduría ancestral ahora revive");});
+ luego(10.5,()=>{final.style.opacity=0;});
+ luego(13.5,()=>{mostrarFinal("¡Bua'ë, bua'ë! Felicidades","Clic para seguir explorando");cine.listo=true;sfx.mistico();});}
+
+// ---------- final malo ----------
+function desastre(){c2=21;cine={t0:reloj.elapsedTime,desde:cam.position.clone(),tipo:'malo',mira:new THREE.Vector3(-65,18,-45)};pausar();ocultarHud();sfx.boom();
+ luego(2,()=>{sfx.oracion();gente.forEach((g,i)=>luego(i*.18,()=>{g.muerto=true;g.caer=reloj.elapsedTime;chispas(g.p.position.clone().add(new THREE.Vector3(0,1,0)),0x777777,12,.12);}));});
+ luego(5,()=>{cine.sacude=.2;sfx.erupcion();velo.style.background='rgba(200,40,0,.30)';scene.background.set(0x6a3a30);scene.fog.color.set(0x7a4a3a);});
+ const cr=new THREE.Vector3(VX,altura(VX,VZ)+2,VZ);
+ for(let i=0;i<14;i++)luego(5+i*.5,()=>{chispas(cr,0xff5a10,60,.8,7);chispas(cr,0x3a3a3a,25,2.2,4);sfx.boom();lava.intensity=20000+Math.random()*8000;});
+ luego(12,()=>{mostrarFinal("Los mojones cerraron la Gran Toyopán. Sin salida y sin aliados, el pueblo calló... y el volcán despertó.","Clic para volver al momento de decidir");cine.listo=true;});}
+function rebobinar(){gente.forEach(g=>{g.muerto=false;g.caer=undefined;g.p.rotation.x=0;});
+ mojones2.forEach(m=>{m.g.visible=false;m.listo=false;m.piedra.position.y=-1.2;m.s.visible=true;});puestos2=0;
+ lava.intensity=0;velo.style.background='rgba(200,40,0,0)';scene.background.set(0xa8d4f0);scene.fog.color.set(0xb8d8ec);
+ const w=errantes.find(x=>x.id==='alferez');if(w){w.fijo=false;w.tx=PX+8;w.tz=PZ+8;w.esp=4;}
+ alferez.position.set(PX+8,altura(PX+8,PZ+8),PZ+8);rechazo=false;c2=2;cam.position.set(PX+4,altura(PX+4,PZ+14)+1.7,PZ+14);}
+
+// ---------- vida libre: todos caminan por todas partes ----------
+function nuevoDestino(w){let x,z,n=0;do{x=(Math.random()-.5)*330;z=(Math.random()-.5)*330;n++;}while(n<8&&Math.hypot(x-VX,z-VZ)<VR*.7);w.tx=x;w.tz=z;w.esp=Math.random()*3;}
+function angulo(p,a,kk){let d=a-p.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));p.rotation.y+=d*kk;}
+function vagar(dt,t){errantes.forEach(w=>{if(w.muerto||!w.p.visible)return;const p=w.p,px=cam.position.x-p.position.x,pz=cam.position.z-p.position.z,dp=Math.hypot(px,pz);
+ if(w.fijo){angulo(p,Math.atan2(px,pz)+Math.PI,.1);animar(p,t,false);return;}
+ if((w.id==='campesino'&&bloqueoYa)||(dp<5&&activo())){angulo(p,Math.atan2(px,pz),.1);animar(p,t,false);return;}
+ if(w.esp>0){w.esp-=dt;animar(p,t,false);return;}
+ const dx=w.tx-p.position.x,dz=w.tz-p.position.z,dd=Math.hypot(dx,dz);
+ if(dd<1){nuevoDestino(w);animar(p,t,false);return;}
+ p.position.x+=dx/dd*w.v*dt;p.position.z+=dz/dd*w.v*dt;angulo(p,Math.atan2(dx,dz),.15);
+ p.position.y=Math.max(altura(p.position.x,p.position.z),-1.2);animar(p,t,true);});}
+function iniciarC2(){c2=1;
+ [[anciano,'anciano',1.5],[alferez,'alferez',1.8],[escribano,'escribano',1.2],[campesino,'campesino',1.8]].forEach(([p,id,v])=>errantes.push({p,id,v,tx:p.position.x,tz:p.position.z,esp:Math.random()*3}));
+ gente.forEach(g=>{g.v=1.7;g.esp=Math.random()*3;errantes.push(g);});
+ hablados.clear();pinta();}
+
+// ---------- cierre de cinemáticas ----------
+final.addEventListener('click',()=>{if(!cine||!cine.listo)return;const tipo=cine.tipo;final.style.opacity=0;final.style.display='none';cine=null;
+ hud.style.display='block';document.getElementById('mira').style.display='block';etiquetas.forEach(s=>s.visible=true);
+ if(tipo==='cap1'){mojones.forEach(m=>m.s.visible=false);tumba.children[tumba.children.length-1].visible=false;
+  scene.fog.near=60;scene.fog.far=260;cam.position.set(PX,altura(PX,PZ+34)+1.7,PZ+34);cam.lookAt(PX,altura(PX,PZ)+1.7,PZ);
+  iniciarC2();actualizarPausa();st.style.display='flex';}
+ else if(tipo==='cap2'){c2=9;rechazo=false;{const w=errantes.find(e=>e.id==='alferez');if(w){w.fijo=false;w.esp=0;}}cam.position.set(PX,altura(PX,PZ+30)+1.7,PZ+30);cam.lookAt(PX,altura(PX,PZ)+1.7,PZ);actualizarPausa();st.style.display='flex';}
+ else if(tipo==='malo'){rebobinar();actualizarPausa();st.style.display='flex';}
+ pinta();guardar();});
+
+
+// ================= GUARDADO AUTOMÁTICO =================
+const CLAVE='mojones_zamora_v4',TEXTO_C1=st.innerHTML;let borrando=false;
+const hayGuardado=()=>{try{return !!localStorage.getItem(CLAVE);}catch(e){return false;}};
+function pie(){return hayGuardado()?"<p style='font-size:14px;opacity:.85'>Progreso guardado automáticamente · <button id='nuevo' style='font:inherit;font-size:14px;padding:3px 10px;cursor:pointer'>Empezar de nuevo</button></p>":"";}
+function actualizarPausa(){st.innerHTML=(c2>=1?TEXTO_C2:TEXTO_C1)+pie();}
+st.addEventListener('click',e=>{if(e.target.id==='nuevo'){e.stopImmediatePropagation();
+ if(confirm('¿Borrar el progreso guardado y empezar de nuevo?')){borrando=true;try{localStorage.removeItem(CLAVE);}catch(_){}location.reload();}}},true);
+function guardar(){if(borrando||cine)return;try{
+ localStorage.setItem(CLAVE,JSON.stringify({v:1,t1,t2,ali,mz:mazorcas.map(m=>m.listo?1:0),ht:hitos.map(h=>h.listo?1:0),fase,puestos,secreto,c2:c2>=20?2:c2,carga,convencido,rechazo,puestos2,
+  mj:mojones.map(m=>m.listo?1:0),mj2:mojones2.map(m=>m.listo?1:0),
+  hab:[...hablados].map(g=>gente.indexOf(g)),dic:gente.map(g=>g.dicho),
+  npc:[anciano,alferez,escribano,campesino].map(n=>[n.position.x,n.position.z]),
+  pos:[cam.position.x,cam.position.z,cam.rotation.y]}));}catch(e){}}
+function aplicarFinalC2(){
+ [[6,24,1.15],[4,34,1.35]].forEach(([n,r,esc],j)=>{for(let i=0;i<n;i++){const a=i/n*Math.PI*2+j*.5+.6,x=PX+Math.cos(a)*r,z=PZ+Math.sin(a)*r;
+  arboles.forEach(ar=>{if(Math.hypot(ar.position.x-x,ar.position.z-z)<7)ar.visible=false;});const c=nuevaCasa(x,z,esc);c.visible=true;c.scale.y=1;}});
+ aparecenMujeres();crecerArboles();ensancharRio(1.9);rio.position.y=-.9;rioK=1;
+ soltarMorphos(new THREE.Vector3(PX,altura(PX,PZ),PZ),46,14);
+ cima.visible=true;turu.visible=true;metate.position.set(ZX,cima.position.y+.5,ZZ);metate.rotation.set(0,0,0);metate.children[metate.children.length-1].visible=false;}
+function cargarPartida(){let S=null;try{S=JSON.parse(localStorage.getItem(CLAVE));}catch(e){}if(!S||S.v!==1)return;
+ fase=S.fase;puestos=S.puestos;secreto=S.secreto;t1=!!S.t1;t2=!!S.t2;ali=S.ali||0;
+ (S.mz||[]).forEach((v,i)=>{if(v)mazorcas[i].listo=true;});(S.ht||[]).forEach((v,i)=>{if(v)hitos[i].listo=true;});
+ if(fase==9)mazorcas.forEach(m=>m.g.visible=!m.listo);
+ if(fase==11){const h=hitos.find(x=>!x.listo);if(h)h.g.visible=true;}
+ if(fase>=2)pergG.visible=false;
+ mojones.forEach((m,i)=>{if(S.mj[i]){m.listo=true;m.piedra.position.y=.8;m.s.visible=false;}});
+ if(fase>=3&&secreto<5)mojones.forEach(m=>m.g.visible=true);
+ if(secreto>=2)tumba.visible=true;
+ if(secreto>=3){metate.visible=true;metate.position.y=metY;metate.rotation.y=0;metateListo=true;emergiendo=1;}
+ if(secreto>=5){arboles.forEach(a=>{if(Math.hypot(a.position.x-PX,a.position.z-PZ)<24)a.visible=false;});
+  mojones.forEach(m=>m.g.visible=false);pergG.visible=false;fogata.visible=true;casas.forEach(c=>{c.visible=true;c.scale.y=1;});gente.forEach(g=>g.p.visible=true);}
+ if(S.c2>=1){iniciarC2();c2=S.c2;carga=S.carga;convencido=S.convencido;rechazo=S.rechazo;puestos2=S.puestos2;
+  [anciano,alferez,escribano,campesino].forEach((n,i)=>{const [x,z]=S.npc[i];n.position.set(x,altura(x,z),z);const w=errantes.find(e=>e.p===n);if(w){w.tx=x;w.tz=z;}});
+  if(rechazo&&c2<9){const w=errantes.find(e=>e.id==='alferez');if(w)w.fijo=true;}
+  if(c2==3){mojones2.forEach((m,i)=>{m.g.visible=true;if(S.mj2[i]){m.listo=true;m.piedra.position.y=.8;m.s.visible=false;}});
+   if(mojones2.every(m=>m.listo)){mojones2[3].listo=false;mojones2[3].piedra.position.y=-1.2;mojones2[3].s.visible=true;puestos2=3;}}
+  if(c2==6||c2==7){cima.visible=true;metate.children[metate.children.length-1].visible=false;}
+  if(c2>=9){rechazo=false;aplicarFinalC2();}
+  S.hab.forEach(i=>{if(gente[i])hablados.add(gente[i]);});S.dic.forEach((d,i)=>{if(gente[i])gente[i].dicho=d;});
+  etiquetas.forEach(s=>s.visible=true);mojones.forEach(m=>m.s.visible=false);tumba.children[tumba.children.length-1].visible=false;
+  if(c2!=3)mojones2.forEach(m=>m.s.visible=false);}
+ cam.position.set(S.pos[0],altura(S.pos[0],S.pos[1])+1.7,S.pos[1]);cam.rotation.set(0,S.pos[2],0);
+ pinta();}
+cargarPartida();pinta();actualizarPausa();
+setInterval(guardar,4000);addEventListener('beforeunload',guardar);ctr.addEventListener('unlock',()=>{guardar();if(!cine)actualizarPausa();});
+
+// ================= BUCLE =================
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(reloj.getDelta(),.05),t=reloj.elapsedTime;
+ if(!(cine&&dlgEsp))tEv+=dt;
+ for(let i=eventos.length-1;i>=0;i--)if(tEv>=eventos[i].t){const ev=eventos.splice(i,1)[0];ev.fn();}
+ if(activo()&&!cine&&!eleccion){const s=(k.ShiftLeft||k.ShiftRight?14:7)*dt*(carga?.55:1);let mov=false;
+  if(k.KeyW){ctr.moveForward(s);mov=true}if(k.KeyS){ctr.moveForward(-s);mov=true}if(k.KeyA){ctr.moveRight(-s);mov=true}if(k.KeyD){ctr.moveRight(s);mov=true}
+  {const sj=s*(correrT?2:1);if(Math.abs(joyV.y)>.12){ctr.moveForward(-joyV.y*sj);mov=true}if(Math.abs(joyV.x)>.12){ctr.moveRight(joyV.x*sj);mov=true}}
+  const lim=180;cam.position.x=THREE.MathUtils.clamp(cam.position.x,-lim,lim);cam.position.z=THREE.MathUtils.clamp(cam.position.z,-lim,lim);
+  if(c2==6&&carga&&!convencido){const rx=rioX(cam.position.z)-11;if(cam.position.x>rx)cam.position.x=rx;}
+  vy-=18*dt;let y=cam.position.y+vy*dt;const piso=Math.max(altura(cam.position.x,cam.position.z),-1.4)+1.7+(mov&&suelo?Math.sin(t*10)*.05:0);
+  if(y<=piso){y=piso;vy=0;suelo=true}cam.position.y=y;}
+ if(cine){const tc=t-cine.t0;
+  if(cine.tipo==='cima'){const C=cima.position,a=tc*.25+.8;cam.position.set(C.x+Math.cos(a)*10,C.y+4.5+Math.sin(tc*.5),C.z+Math.sin(a)*10);cam.lookAt(C.x,C.y+3,C.z);}
+  else{const P=new THREE.Vector3(PX,altura(PX,PZ),PZ),d1=cine.d1||4;
+   const cerca=P.clone().add(new THREE.Vector3(0,10,30)),lejos=P.clone().add(new THREE.Vector3(0,62,105));
+   if(tc<d1)cam.position.lerpVectors(cine.desde,cerca,ease(tc/d1));else cam.position.lerpVectors(cerca,lejos,ease(Math.min((tc-d1)/9,1)));
+   const hh=altura(cam.position.x,cam.position.z)+3;if(cam.position.y<hh)cam.position.y=hh;
+   if(cine.sacude)cam.position.add(new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).multiplyScalar(cine.sacude));
+   const L=new THREE.Vector3(P.x,P.y+2,P.z);if(cine.mira)L.lerp(cine.mira,ease(Math.min(Math.max((tc-5)/4,0),1)));cam.lookAt(L);}}
+ if(c2==0){npcs.forEach(n=>{if(d2(n)<8){const a=Math.atan2(cam.position.x-n.position.x,cam.position.z-n.position.z);n.rotation.y+=(a-n.rotation.y)*.08;}animar(n,t,false);});
+ const camina=d2(campesino)>8;
+ if(camina){campesino.position.z=-30+Math.sin(t*.25)*6;campesino.rotation.y=Math.cos(t*.25)>0?0:Math.PI;}
+ else{const a=Math.atan2(cam.position.x-campesino.position.x,cam.position.z-campesino.position.z);campesino.rotation.y+=(a-campesino.rotation.y)*.08;}
+ campesino.position.y=altura(campesino.position.x,campesino.position.z);animar(campesino,t,camina);}else vagar(dt,t);
+ mojones.concat(mojones2).forEach(m=>{m.band.rotation.y=Math.sin(t*4)*.3;m.est.visible=!m.listo;m.band.visible=!m.listo;if(m.listo&&m.piedra.position.y<.8)m.piedra.position.y+=dt*1.5;});
+ pergG.rotation.y=t;perg.position.y=Math.sin(t*2)*.15;
+ orbe.position.y=2+Math.sin(t*1.5)*.25;orbe.material.opacity=secreto==0?.45+Math.sin(t*3)*.25:.15;
+ // metate emergiendo
+ if(emergiendo&&!metateListo){const kk=Math.min((t-emergiendo)/3,1);metate.position.y=metY-2.6*(1-ease(kk));metate.rotation.y=(1-kk)*3;if(kk>=1)metateListo=true;}
+ // lechuza
+ if(metateListo&&secreto==3){buho.g.visible=true;buho.g.position.set(metX,metY+1.25,metZ);buho.g.rotation.y=Math.atan2(cam.position.x-metX,cam.position.z-metZ);
+  buho.cab.rotation.y=Math.sin(t*.8)*.9;buho.alaL.rotation.z=buho.alaR.rotation.z=0;
+  if(t-ultimoUlular>5){ultimoUlular=t;if(d2(metate)<40)sfx.lechuza();}}
+ if(secreto==5){buho.g.visible=true;const a=t*.5;buho.g.position.set(PX+Math.cos(a)*14,altura(PX,PZ)+16+Math.sin(t*1.3),PZ+Math.sin(a)*14);
+  buho.g.rotation.y=-a;buho.alaL.rotation.z=Math.sin(t*10)*.7;buho.alaR.rotation.z=-Math.sin(t*10)*.7;buho.cab.rotation.y=0;}
+ // casas que surgen
+ crecer.forEach(c=>{const kk=Math.min(Math.max((t-c.t0)/c.d,0),1);c.o.scale.y=Math.max(.01,ease(kk));});
+ llama.scale.set(1+Math.sin(t*13)*.1,1+Math.sin(t*9)*.2,1+Math.cos(t*11)*.1);
+ // gente de Toyopán
+ gente.forEach(g=>{if(!g.p.visible||c2>0)return;const dx=g.tx-g.p.position.x,dz=g.tz-g.p.position.z,dd=Math.hypot(dx,dz);
+  if(dd<.5){const a=Math.random()*6.28,r=3+Math.random()*7;g.tx=PX+Math.cos(a)*r;g.tz=PZ+Math.sin(a)*r;}
+  else{g.p.position.x+=dx/dd*1.3*dt;g.p.position.z+=dz/dd*1.3*dt;g.p.rotation.y=Math.atan2(dx,dz);}
+  g.p.position.y=altura(g.p.position.x,g.p.position.z);animar(g.p,t,dd>=.5);});
+ crecer2.forEach(c=>{const kk=Math.min(Math.max((t-c.t0)/c.d,0),1);c.o.scale.setScalar(Math.max(.01,ease(kk)));});
+ if(rioT0){const kk=ease(Math.min((t-rioT0)/6,1));ensancharRio(1+.9*kk);rio.position.y=-1.6+.7*kk;rioK=kk;}
+ mariposas.forEach(m=>{if(m.dest)m.c.lerp(m.dest,dt*.4);const a=t*m.w+m.ph,r=m.r*(1+.3*Math.sin(t*.7+m.ph)),y=m.c.y+m.h+Math.sin(t*.9+m.ph)*1.5;
+  m.g.position.set(m.c.x+Math.cos(a)*r,y,m.c.z+Math.sin(a)*r);m.g.rotation.y=Math.atan2(-Math.sin(a),Math.cos(a));const f=Math.sin(t*16+m.ph)*.9;m.wl.rotation.z=f;m.wr.rotation.z=-f;});
+ if(turu.visible){angulo(turu,Math.atan2(cam.position.x-turu.position.x,cam.position.z-turu.position.z),.05);animar(turu,t,false);}
+ gente.forEach(g=>{if(g.muerto&&g.caer!==undefined)g.p.rotation.x=-Math.PI/2*ease(Math.min((t-g.caer)/1,1));});
+ if(lava.intensity>1)lava.intensity*=Math.pow(.25,dt);
+ if(c2==6&&carga&&!convencido&&!bloqueoYa&&!eleccion&&!cine&&cam.position.x>rioX(cam.position.z)-17)arrieroBloquea();
+ if(carga&&!cine){const d=new THREE.Vector3();cam.getWorldDirection(d);d.y=0;d.normalize();metate.position.set(cam.position.x+d.x*1.3,cam.position.y-1.0,cam.position.z+d.z*1.3);metate.rotation.y=Math.atan2(d.x,d.z)-Math.PI/2;}
+ mazorcas.forEach(m=>{m.g.rotation.y=t*1.5;});
+ if(c2==0&&activo()&&!cine){
+  if(fase==9)mazorcas.forEach(m=>{if(!m.listo&&d2(m.g)<2.5){m.listo=true;m.g.visible=false;sfx.recoger();chispas(m.g.position.clone().add(new THREE.Vector3(0,1,0)),0xffdd55,20,.1);
+   const n=mazorcas.filter(x=>x.listo).length;decir("Narrador","Mazorca de maíz criollo: "+n+"/5",true,3);if(n==5){fase=10;luego(3.2,()=>decir("Narrador","Tenés las cinco mazorcas. Llevalas al anciano huetar.",true,5));}pinta();}});
+  if(fase==11){const h=hitos.find(x=>!x.listo);if(h&&d2(h.g)<3.5){h.listo=true;h.g.visible=false;sfx.mojon();decir("Narrador",h.txt,true,10);
+   const nx=hitos.find(x=>!x.listo);if(nx)nx.g.visible=true;else{fase=12;luego(10.2,()=>decir("Narrador","Terminaste el recorrido. Volvé con el Alférez.",true,5));}pinta();}}}
+ if(t-ultHud>.5){ultHud=t;pinta();}
+ nubes.forEach(n=>{n.position.x+=dt*1.5;if(n.position.x>220)n.position.x=-220});
+ arboles.forEach((a,i)=>a.rotation.z=Math.sin(t*1.2+i)*.015);
+ rio.material.color.setHSL(.57,.55+rioK*.2,.5-rioK*.06+Math.sin(t*2)*.03);
+ for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.userData.v.y-=9*dt;q.position.addScaledVector(q.userData.v,dt);q.rotation.x+=dt*5;q.userData.t-=dt;if(q.userData.t<0){scene.remove(q);parts.splice(i,1)}}
+ hint.style.display=(activo()&&!cine&&objetivoCercano())?'block':'none';
+ if(dlgT>0){dlgT-=dt;if(dlgT<=0&&dlgEsp)avanzar();}
+ R.render(scene,cam);})();
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight);});
+</script></body></html>
