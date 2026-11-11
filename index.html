@@ -96,7 +96,7 @@ const RIO_X=45, VX=-110, VZ=-115, VR=55, VH=38;   // volcán del secreto
 const PX=-25, PZ=25;                                 // plaza de la Gran Toyopán
 const TX=-100, TZ=45;
 const ZX=125, ZZ=-95, ZR=50, ZH=34;                  // cerro Zurquí (al este del Tures)
-const rioX=z=>RIO_X-Math.sin(z*.05)*6;                                // tumba de Yorustí
+const rioX=z=>RIO_X-Math.sin(z*.05)*6;                                // tumba de Yurustí
 function altura(x,z){let h=Math.sin(x*.03)*2.5+Math.cos(z*.025)*2.5+Math.sin((x+z)*.06)*1.2;
  h+=Math.max(0,(-z-80)*.08);
  const dz=Math.hypot(x-ZX,z-ZZ);if(dz<ZR){const s=1-dz/ZR;h+=ZH*s*s*(3-2*s);}
@@ -224,7 +224,7 @@ disco.position.y=.17;marca.add(disco);
 const orbe=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),new THREE.MeshBasicMaterial({color:0x9fe8ff,transparent:true,opacity:.7}));orbe.position.y=2;marca.add(orbe);
 colocar(sh(marca),VX,VZ);
 
-// gran ceiba y tumba de Yorustí
+// gran ceiba y tumba de Yurustí
 const ceiba=new THREE.Group();
 const tronco=new THREE.Mesh(new THREE.CylinderGeometry(1.5,2.4,15,10),M(0x8a7a6a));tronco.position.y=7.5;ceiba.add(tronco);
 for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const cont=new THREE.Mesh(new THREE.BoxGeometry(.4,3,2.6),M(0x8a7a6a));cont.position.set(Math.cos(a)*2,1.3,Math.sin(a)*2);cont.rotation.y=-a;ceiba.add(cont);}
@@ -235,7 +235,7 @@ const monticulo=new THREE.Mesh(new THREE.SphereGeometry(2.6,14,8),M(0x7a5a3a));m
 for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const pd=new THREE.Mesh(new THREE.DodecahedronGeometry(.45,0),M(0x8a8a80));pd.position.set(Math.cos(a)*3.1,.2,Math.sin(a)*3.1);tumba.add(pd);}
 const losa=new THREE.Mesh(new THREE.BoxGeometry(1.8,.2,1),[M(0x6a6a62),M(0x6a6a62),new THREE.MeshStandardMaterial({map:te,emissive:0x2aa0c0,emissiveMap:te,emissiveIntensity:.4}),M(0x6a6a62),M(0x6a6a62),M(0x6a6a62)]);
 losa.position.y=.9;tumba.add(losa);
-tumba.add((()=>{const s=cartel('Tumba de Yorustí','#9fe8ff');s.position.y=3;return s;})());
+tumba.add((()=>{const s=cartel('Tumba de Yurustí','#9fe8ff');s.position.y=3;return s;})());
 colocar(sh(tumba),TX,TZ);tumba.visible=false;
 
 // metate sagrado
@@ -289,7 +289,7 @@ const HUETARES=[
  {nombre:'Cronista',lineas:["Entre 1570 y 1575 juntaron a los sobrevivientes en la reducción de Barva, que estaba por Getsemaní, no donde está hoy el pueblo.","Unos dicen que éramos cientos de miles; otros, apenas veinte mil. Nadie lo sabe seguro, pero las epidemias y la explotación nos vaciaron."]},
  {nombre:'Caminante',lineas:["<i>«Ìs be' tso'?»</i> Esto que vos llamás Santo Domingo, nosotros lo llamamos Tibás; y Santo Tomás es el Rincón de Tibás.","Más abajo, en San Miguel, hay un lugar llamado Hawei, «hierba de mucha agua». Los nombres cuentan cómo es la tierra."]},
  {nombre:'Cazador',lineas:["Los nombres de nuestra gente terminan en vocal: Yurustí, Quisarcó. Si un papel dice «Yurustic», lo escribió un forastero.","Quisarcó fue una mujer principal; su nombre todavía se oirá en Santo Domingo cuando nadie recuerde por qué."]},
- {nombre:'Alfarero',lineas:["La cerámica policroma se pinta con tierras de colores y se cuece al fuego: cada dibujo cuenta algo.","El oro lo trabajan pocos y se reserva para los jefes."]},
+ {nombre:'Alfarero',lineas:["La cerámica policroma más fina no es de aquí: llega de Nicaragua y de Guanacaste por los caminos de intercambio. Cada dibujo cuenta algo.","El oro viaja por los mismos caminos que la sal, la tortuga y las plumas."]},
  {nombre:'Viajero de Talamanca',lineas:["<i>«Ìs be' tso'?»</i> Vengo de Talamanca, donde se habla bribri. Allá se fue Francisco Correque, hijo de Guarco, con su gente.","Los descendientes de Guarco están en Tucurrique y mezclados en Atirro, Cartago y Turrialba. La sangre y las palabras caminan."]},
  {nombre:'Guía del Zurquí',lineas:["El camino del Cuascuá subía junto al cerro Zurquí hacia Guápiles y Matina. Al otro lado del Tures, la montaña guarda memoria.","Dicen que los chamanes subían con ofrendas y que, cuando la montaña acepta, aparecen mariposas azules."]}
 ];
@@ -300,6 +300,22 @@ const MUJERES=[
  {nombre:'Curandera',lineas:["El llantén sirve para las heridas y el culantro coyote para el estómago. Las plantas de la huerta curan.","Antes de entrar al monte se pide permiso; antes de cortar una planta, también."]},
  {nombre:'Alfarera',lineas:["Modelo las ollas con las manos y las pinto con tierras de colores, como mi madre.","Los hermanos del sur dicen <i>«Ye' miã́tche»</i> cuando se despiden. A mí me gusta más <i>«bua'ë»</i>."]}
 ];
+// líneas añadidas al cruzar de nuevo el wiki «De Toyopán a la Actualidad» (temas huetares_valle_central, toponimia_huetar, tierras_del_comun, tierras_de_tibas, tabaco_y_colonizacion, deforestacion_zurqui_la_palma; personas/yurusti; lugares/toyopan y tures)
+const MAS_LINEAS={
+ 'Turial':["Dicen que más arriba hay un paraje al que llaman el Turial. Si es por mí, no lo sé: los nombres se quedan donde uno pasó."],
+ 'Tures':["La quebrada que lleva mi nombre servirá de mojón cuando midan estas tierras, y el río marcará el límite entre Santo Domingo y San Isidro."],
+ 'Ibux':["Yurustí tiene su casa principal en Toyopán, en las nubes de Coronado, y otras en La Canoa y en lo que llamarán Santo Domingo. Cuando fue a reunirse con Vázquez de Coronado, llegó con treinta y cinco acompañantes."],
+ 'Guardián del Cuascuá':["Este camino no se va a borrar: siglos después, los agrimensores todavía dibujarán en sus planos una «calle de Cuascuá»."],
+ 'Mercader':["Lo que llamarán Santo Domingo es lugar de estancia y de mercado: ahí descansan los que vienen por el Cuascuá y se cambia lo que traen."],
+ 'Maestro de palabras':["Muchas de nuestras palabras se van a quedar escondidas en el español de esta tierra, sobre todo en los nombres de los ríos y los lugares."],
+ 'Agricultor':["En los claros crece tabaco silvestre. Algún día esa hoja traerá mucha gente nueva a estas tierras."],
+ 'Cronista':["En 1569 repartieron a nuestra gente en encomiendas, por dos vidas. A los pueblos reducidos les dejaron tierras comunales, pero sin título: los papeles llegaron mucho después."],
+ 'Caminante':["Pará quiere decir zacate largo, y Parasito, el zacate más bajito. Y donde estará el centro de Heredia, nosotros decimos Cubujuquí."],
+ 'Cazador':["Hacia el volcán Poás viven los votos. Con el tiempo se irán hacia Sarapiquí y las llanuras del norte."],
+ 'Guía del Zurquí':["Al pie del Zurquí hay cedros amargos, y el terreno suda agua. Si algún día talan el cerro, el agua se irá con los árboles."],
+ 'Curandera':["En las tierras del común cualquiera recoge leña, frutos y plantas de remedio. No son de nadie ni de todos, y no tienen escritura."]
+};
+HUETARES.concat(MUJERES).forEach(h=>{if(MAS_LINEAS[h.nombre])h.lineas.push(...MAS_LINEAS[h.nombre]);});
 const gente=[];
 for(let i=0;i<13;i++){const piel=[0x8a5a34,0x7a4a2a,0x9a6a40][i%3],mujer=false;
  const pj=persona({piel,camisa:mujer?0xe8dcc0:piel,pantalon:piel,falda:[0xc84a2a,0xe8dcc0,0x3a6a8a][i%3],banda:[0xc83a2a,0xe8c040,0x2a5a8a][(i+1)%3],pelo:0x0a0805});
@@ -317,7 +333,7 @@ const mis=["Hablá con el <b>Alférez Zamora</b> (capa roja).","Tomá la <b>merc
 "Recorré el viejo <b>camino del Cuascuá</b>: seguí la luz de los hitos.",
 "Volvé con el <b>Alférez</b> para contarle.",
 "<b>¡Misión cumplida!</b> Seguí explorando. Dicen que en lo alto del volcán hay una marca de los antiguos."];
-const misSec={1:"Volvé con el <b>anciano huetar</b>.",2:"Encontrá la <b>tumba de Yorustí</b>, bajo la gran ceiba, al oeste.",3:"Acercate al <b>metate sagrado</b>.",5:"<b>¡La Gran Toyopán vive!</b>"};
+const misSec={1:"Volvé con el <b>anciano huetar</b>.",2:"Encontrá la <b>tumba de Yurustí</b>, bajo la gran ceiba, al oeste.",3:"Acercate al <b>metate sagrado</b>.",5:"<b>¡La Gran Toyopán vive!</b>"};
 function tgC1(){switch(fase){
  case 0:case 4:case 12:return alferez;case 1:return pergG;case 2:case 8:case 10:return anciano;
  case 3:{const m=mojones.find(x=>!x.listo);return m?m.g:null;}
@@ -388,12 +404,12 @@ function usar(){if(!activo()||cine||eleccion)return;const o=objetivoCercano();if
  else if(o==='perg'){if(fase==1){pergG.visible=false;sfx.recoger();chispas(pergG.position,0xfff0c0);decir("Narrador","Recogiste la merced real: el documento con el que el rey cede las tierras.",true);fase=2;}
   else decir("Narrador","Primero hablá con el Alférez.");}
  else if(o==='anciano'){
-  if(fase==2){decir("Anciano huetar","Mi gente caminó estos montes desde los tiempos del cacique Yorustí, señor de la Gran Toyopán. El rey dice que da esta tierra, como si fuera suya. La tierra no se da ni se vende: todos somos parte de ella. Pero si van a poner piedras, que se sepa dónde: junto al río, hacia el monte y hacia el sur.");fase=3;mojones.forEach(m=>m.g.visible=true);}
+  if(fase==2){decir("Anciano huetar","Mi gente caminó estos montes desde los tiempos de Yurustí, ibux de la Gran Toyopán. El rey llama «realengas» a estas tierras, como si fueran suyas. Para nosotros son del común: no son de nadie ni de todos, y de ellas salen la leña, los frutos y las plantas que curan. La tierra no se da ni se vende. Pero si van a poner piedras, que se sepa dónde: junto al río Tures, hacia el monte y hacia el sur.");fase=3;mojones.forEach(m=>m.g.visible=true);}
   else if(secreto==1){secreto=2;tumba.visible=true;sfx.mistico();chispas(tumba.position.clone().add(new THREE.Vector3(0,1,0)),0x9fe8ff,40);
-   decir("Anciano huetar","Encontraste la marca de los antiguos... Entonces llegó la hora. Al oeste, bajo la gran ceiba, descansa Yorustí, señor de la Gran Toyopán. Andá a su tumba y decí la oración. Si la tierra te escucha, despertará lo que estaba dormido.",true,11);}
-  else if(secreto==0)decir("Anciano huetar","El río Tures da agua a todos. Y dicen que en lo alto del volcán quedó una marca de los antiguos...");
+   decir("Anciano huetar","Encontraste la marca de los antiguos... Entonces llegó la hora. Al oeste, bajo la gran ceiba, descansa Yurustí, el ibux que fue a reunirse con Juan Vázquez de Coronado acompañado de treinta y cinco de los suyos. Andá a su tumba y decí la oración. Si la tierra te escucha, despertará lo que estaba dormido.",true,11);}
+  else if(secreto==0)decir("Anciano huetar","El Tures lleva el nombre de uno de los asistentes de Yurustí, y da agua a todos. Y dicen que en lo alto del volcán quedó una marca de los antiguos...");
   else if(secreto>=5)decir("Anciano huetar","¡La Gran Toyopán vive otra vez! Gracias, muchacho.");
-  else decir("Anciano huetar","Andá a la gran ceiba, al oeste. Yorustí te espera.");}
+  else decir("Anciano huetar","Andá a la gran ceiba, al oeste. Yurustí te espera.");}
  else if(o==='escribano'){if(fase==5){decir("Escribano","Queda asentado en el protocolo, con firma y testigos. Algún día, alguien leerá estos papeles para saber de quién fue cada tierra.");fase=6;sfx.fanfarria();
    const c=escribano.position.clone().add(new THREE.Vector3(0,2,0));chispas(c,0x88ddff,40);luego(.6,()=>chispas(c,0xffdd55,40));luego(1.5,()=>chispas(c,0xff7a9a,40));luego(2.5,()=>chispas(c,0xffffff,50));}
   else decir("Escribano","Sin documento no hay registro. Así es la ley.");}
@@ -402,7 +418,7 @@ function usar(){if(!activo()||cine||eleccion)return;const o=objetivoCercano();if
    decir("Narrador","Una espiral tallada en la piedra brilla bajo tus manos. El viento trae la voz del anciano huetar: «Bajá, muchacho. Tengo algo que contarte.»",true,9);}
   else decir("Narrador","La espiral sigue brillando débilmente.");}
  else if(o==='tumba'){secreto=3;sfx.oracion();
-  decir("Oración","«Abuelo Yorustí, señor de la Gran Toyopán: la tierra recuerda, el agua recuerda, el maíz recuerda. Que despierte lo que estaba dormido.»",true,7);
+  decir("Oración","«Abuelo Yurustí, ibux de la Gran Toyopán: la tierra recuerda, el agua recuerda, el maíz recuerda. Que despierte lo que estaba dormido.»",true,7);
   luego(3,()=>{metate.visible=true;emergiendo=reloj.elapsedTime;sfx.mistico();chispas(new THREE.Vector3(metX,metY+.5,metZ),0x9fe8ff,60);});
   luego(6.3,()=>{sfx.lechuza();decir("Narrador","De la tierra surge el metate sagrado, y sobre él se posa una lechuza. Acercate.",true);});}
  else if(o==='metate')transformar();
@@ -445,14 +461,14 @@ function usarExtra(o){
  if(o==='escribano'&&fase==5){fase=6;t1=t2=false;decir("Escribano","La merced está en regla... casi. Toda escritura necesita dos testigos que firmen o pongan su cruz. Traé al arriero y al anciano huetar.",false,10);return true;}
  if(fase==6&&(o==='campesino'||o==='anciano')){
   if(o==='campesino'){t1=true;decir("Arriero","¿Testigo yo? No sé firmar, pero pongo mi cruz. Eso sí: la tierra tenía gente mucho antes de tener papeles.",false,9);}
-  else{t2=true;decir("Anciano huetar","Pondré mi huella, pero que quede claro: la tierra no es de nadie. Es un ser vivo, y de su sangre se alimenta el mundo. La montaña, el río, las plantas y nosotros somos parte del mismo tejido: cumplimos un encargo, no somos dueños.",false,9);}
+  else{t2=true;decir("Anciano huetar","Pondré mi huella, pero que quede claro: nuestras tierras del común nunca tuvieron escritura, y no la necesitaron. La tierra no es de nadie: es un ser vivo, y de su sangre se alimenta el mundo. La montaña, el río, las plantas y nosotros somos parte del mismo tejido: cumplimos un encargo, no somos dueños.",false,9);}
   if(t1&&t2){fase=7;sfx.recoger();luego(9.2,()=>decir("Narrador","Ya tenés a los dos testigos. Volvé con el escribano.",true,5));}
   return true;}
  if(fase==7&&o==='escribano'){decir("Escribano","Firmado con las cruces y la huella de los testigos. Queda asentado en el protocolo. Algún día, alguien leerá estos papeles para saber de quién fue cada tierra.",false,10);fase=8;sfx.fanfarria();
   const c=escribano.position.clone().add(new THREE.Vector3(0,2,0));chispas(c,0x88ddff,40);luego(.6,()=>chispas(c,0xffdd55,40));luego(1.5,()=>chispas(c,0xff7a9a,40));luego(2.5,()=>chispas(c,0xffffff,50));return true;}
  if(fase==8&&o==='anciano'){fase=9;mazorcas.forEach(m=>m.g.visible=!m.listo);decir("Anciano huetar","Muchacho, firmaste el papel de la tierra. Ahora ayudame con la tierra misma: las mazorcas de maíz criollo se dispersaron por el paraje y sin semilla no hay milpa. Buscá cinco; brillan.",false,12);return true;}
  if(fase==9&&o==='anciano'){decir("Anciano huetar","Cinco mazorcas de maíz criollo, muchacho. Buscá las que brillan en el paraje. Llevás "+mazorcas.filter(x=>x.listo).length+".");return true;}
- if(fase==10&&o==='anciano'){fase=11;hitos[0].g.visible=true;sfx.recoger();decir("Anciano huetar","Con esta semilla habrá milpa y habrá memoria. Una cosa más: recorré el viejo camino del Cuascuá para que la tierra te conozca. Seguí la luz de los hitos.",false,12);return true;}
+ if(fase==10&&o==='anciano'){fase=11;hitos[0].g.visible=true;sfx.recoger();decir("Anciano huetar","Con esta semilla habrá milpa y habrá memoria. Una cosa más: recorré el viejo camino del Cuascuá para que la tierra te conozca. El Cuascuá es camino y también bosque sagrado: antes de entrar, pedí permiso. Seguí la luz de los hitos.",false,12);return true;}
  if(fase==11&&o==='anciano'){decir("Anciano huetar","Seguí la luz del camino, muchacho. Son tres hitos.");return true;}
  if(fase==12&&o==='alferez'){fase=13;sfx.fanfarria();decir("Alférez Zamora","Papeles firmados, semilla guardada y el camino recorrido: el paraje te conoce, muchacho. Me quedo tranquilo. Dicen que el anciano huetar guarda otros secretos; hablá con él.",false,12);return true;}
  if(o==='marca'&&fase<13&&secreto==0){decir("Narrador","La espiral está apagada y no responde. Quizá todavía falten cosas por hacer en el paraje.",true);return true;}
@@ -512,7 +528,7 @@ function hudC2(){let m="",tg=null;
  else if(c2==2){m="Turial te pidió averiguar qué trama el <b>Alférez Zamora</b>.";tg=alferez;}
  else if(c2==3){m="Colocá los <b>4 mojones nuevos</b> alrededor de la Gran Toyopán: "+puestos2+"/4";const f=mojones2.find(x=>!x.listo);tg=f?f.g:null;}
  else if(c2==4){m="El Alférez te dio la espalda. Buscá al <b>anciano huetar</b>.";tg=anciano;}
- else if(c2==5){m="Recogé el <b>metate sagrado</b>, junto a la tumba de Yorustí.";tg=metate;}
+ else if(c2==5){m="Recogé el <b>metate sagrado</b>, junto a la tumba de Yurustí.";tg=metate;}
  else if(c2==6){m="Cruzá el <b>río Tures</b> con el metate. Un arriero va a interponerse.";tg={position:{x:rioX(cam.position.z)+6,z:cam.position.z}};}
  else if(c2==7){m="Subí el metate hasta la cima del <b>cerro Zurquí</b>.";tg=cima;}
  else if(c2==9){m="Algo cambió en el <b>Alférez Zamora</b>: quiere hablarte.";tg=alferez;}
@@ -555,6 +571,12 @@ function responderPalabra(p){
  if(p.ok){convencido=true;c2=7;bloqueoYa=false;sfx.recoger();decir("Arriero","«Bua'ë»... Hacía años que no oía esa palabra bien dicha. Pasá, muchacho. Que el metate llegue arriba.",false,9);}
  else{decir("Arriero",p.eco,false,4);luego(4,()=>{if(c2==6&&!convencido)mostrarPalabras("Arriero","Probá otra vez. Una palabra buena, muchacho.");});}}
 
+let anc=0;
+const LINEAS_ANCIANO=[
+ "Mi gente caminó estos montes desde los tiempos de Yurustí. Andá, hablá con ellos: cada uno guarda un pedazo de la historia.",
+ "A los de este lado del valle nos dicen huetares de occidente. Más arriba viven los tises, y hacia el Poás, los catapas.",
+ "Yurustí tenía su casa principal en Toyopán, allá en las nubes de Coronado, y otras en La Canoa y donde un día estará Santo Domingo.",
+ "La Gran Toyopán llega hasta donde el Irazú y el río le ponen límite. Del otro lado empieza la tierra de Guarco."];
 const LINEAS_ALIADO=[
  "Le escribí al rey: para los huetares la tierra no es de nadie. Es un ser vivo que alimenta al mundo, y a ella se le debe cuidado, no mojones.",
  "Ellos me enseñaron a pedir permiso al monte antes de entrar. Ahora lo hago yo también, muchacho.",
@@ -582,9 +604,9 @@ function usarC2(o){switch(o.tipo){
  case 'anciano':
   if(c2==4){c2=5;decir("Anciano huetar","Mal gesto el del Alférez, pero vos hiciste lo justo. Escuchá: el metate sagrado tiene que volver a la montaña. Llevalo al otro lado del río Tures y subilo hasta la cima del cerro Zurquí. Un arriero te va a cerrar el paso; no lo vas a vencer con fuerza. Acordate de lo que dicen los del reino de Toyopán cuando algo es bueno.",false,16);}
   else if(c2==3)decir("Anciano huetar","¿Qué son esas piedras? Los linderos de papel no pueden cercar a un pueblo vivo, muchacho.");
-  else if(c2>=5&&c2<=7)decir("Anciano huetar","El metate espera junto a la tumba de Yorustí. Al otro lado del Tures está el Zurquí; allá la montaña acepta, o no acepta.");
+  else if(c2>=5&&c2<=7)decir("Anciano huetar","El metate espera junto a la tumba de Yurustí. Al otro lado del Tures está el Zurquí; allá la montaña acepta, o no acepta.");
   else if(c2>=9)decir("Anciano huetar","La Gran Toyopán vive de nuevo, y con ella las palabras. Bua'ë, muchacho.");
-  else decir("Anciano huetar","Mi gente caminó estos montes desde los tiempos de Yurustí. Andá, hablá con ellos.");
+  else decir("Anciano huetar",LINEAS_ANCIANO[anc++%LINEAS_ANCIANO.length],false,11);
   break;
  case 'escribano':decir("Escribano",c2==3?"Cercar un pueblo con mojones... eso no figura en ninguna merced, muchacho. Pensalo bien.":"Sin documento no hay registro. Así es la ley.");break;
  case 'campesino':decir("Arriero",c2>=7?"Pasá, pasá. «Bua'ë».":"Llevo mulas y bueyes por el camino real hasta Cartago. ¡Qué lejos!");break;
