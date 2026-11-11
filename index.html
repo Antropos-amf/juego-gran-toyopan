@@ -332,9 +332,9 @@ const HUETARES=[
  {nombre:'Turial',lineas:["Soy Turial, asistente del ibux Yurustí. <i>Ibux</i> es palabra nuestra: quiere decir principal, señor. ¡Mirá cómo respira otra vez la Gran Toyopán!","Nuestras casas redondas, los palenques, se levantan entre todos: aquí nadie construye solo."]},
  {nombre:'Tures',lineas:["Mi nombre quedó en un río, en un pueblo y hasta en un puente. Yo sirvo a Yurustí, igual que Turial.","Algún día habrá un Tures en San Miguel y otro en Santo Tomás: los nombres viajan más que la gente."]},
  {nombre:'Ibux',lineas:["Yurustí es ibux, jefe de esta parte del valle; no es cacique. El gran cacique es Garabito, que manda del río Virilla para acá. Del otro lado manda Guarco.","Los forasteros llaman «caciques» a todos los jefes. Nosotros decimos <i>taquetaque uriuri</i>: señores e hijos de señores. Cada cual tiene su lugar."]},
- {nombre:'Guardián del Cuascuá',lineas:["Yo cuido el camino del Cuascuá, que va de Quepo y Orotina hasta Santo Domingo y Matina. Por aquí baja el <i>capasurí</i>, el venado, a beber en los <i>yurros</i>, los ojos de agua.","El Cuascuá también es bosque sagrado: solo los chamanes entran. Quien va al monte pide permiso, aunque no vea a nadie."]},
+ {nombre:'Guardián del Cuascuá',lineas:["Yo cuido el camino del Cuascuá, que va de Quepo y Orotina hasta Santo Domingo y Matina. Por aquí baja el <i>capasurí</i>, el venado, a beber en los <i>yurros</i>, los arroyitos.","El Cuascuá también es bosque sagrado: solo los chamanes entran. Quien va al monte pide permiso, aunque no vea a nadie."]},
  {nombre:'Mercader',lineas:["Cambio sal, tortuga, plumas de <i>cusinga</i> —el tucán—, cerámica policroma de Nicaragua y Guanacaste... y hasta algo de oro.","Cada cinco kilómetros hay un residencial en el bosque, a un día o medio día de camino. Nadie duerme a la intemperie."]},
- {nombre:'Maestro de palabras',lineas:["De nuestra lengua van a quedar sobre todo nombres de ríos, de cerros y de gente. Pero también palabras: <i>yurro</i> es el ojo de agua, <i>poró</i> es un árbol y <i>purruja</i> es el jején que pica en la tarde.","Nuestros hermanos de Talamanca dicen <i>«bua'ë»</i> cuando algo es bueno y hay paz entre la gente. Es una palabra de bien. Guardala: puede abrirte puertas."]},
+ {nombre:'Maestro de palabras',lineas:["De nuestra lengua van a quedar sobre todo nombres de ríos, de cerros y de gente. Pero también palabras: <i>yurro</i> es el arroyito que nace de un ojo de agua, <i>poró</i> es un árbol y <i>purruja</i> es el jején que pica en la tarde.","Nuestros hermanos de Talamanca dicen <i>«bua'ë»</i> cuando algo es bueno y hay paz entre la gente. Es una palabra de bien. Guardala: puede abrirte puertas."]},
  {nombre:'Agricultor',lineas:["Sembramos maíz, y también jocote, guayaba, culantro coyote y llantén. Esas plantas siguen en las huertas aunque cambien los tiempos y lleguen cercas nuevas.","Cuando el maíz ya endureció en la mazorca decimos que está <i>cospó</i>. Si la mazorca salió con pocos granos, es un <i>cracrá</i>.","El maíz se muele en el metate. Por eso el metate no es una piedra cualquiera: es memoria que alimenta."]},
  {nombre:'Cronista',lineas:["Entre 1570 y 1575 juntaron a los sobrevivientes en la reducción de Barva, que estaba por Getsemaní, no donde está hoy el pueblo.","Unos dicen que éramos cientos de miles; otros, apenas veinte mil. Nadie lo sabe seguro, pero las epidemias y la explotación nos vaciaron."]},
  {nombre:'Caminante',lineas:["Esto que vos llamás Santo Domingo, nosotros lo llamamos Tibás; y Santo Tomás es el Rincón de Tibás.","Más abajo, en San Miguel, hay un lugar llamado Hawei, «hierba de mucha agua». Los nombres cuentan cómo es la tierra."]},
@@ -589,7 +589,7 @@ function hudC2(){let m="",tg=null;
 function objetivoC2(){if(c2>=20||c3>=20)return null;
  if(c3>=1&&c3<10)return objetivoC3();
  if(turu.visible&&d2(turu)<3.5)return {tipo:'turu'};
- if(c3>=10){if(d2(quesada)<3.5)return {tipo:'quesada'};if(d2(ramon)<3.5)return {tipo:'ramon'};}
+ if(c3>=10){if(d2(quesada)<3.5)return {tipo:'quesada'};if(d2(ramon)<3.5)return {tipo:'ramon'};if(galera.visible&&d2(galera)<5)return {tipo:'galera'};}
  if(d2(alferez)<3.5)return {tipo:'alferez'};if(d2(anciano)<3.5)return {tipo:'anciano'};if(d2(escribano)<3.5)return {tipo:'escribano'};if(d2(campesino)<3.5)return {tipo:'campesino'};
  let mg=null,md=3;gente.forEach(g=>{if(g.p.visible&&!g.muerto){const d=d2(g.p);if(d<md){md=d;mg=g;}}});if(mg)return {tipo:'huetar',g:mg};
  if(c2==3)for(const m of mojones2)if(!m.listo&&d2(m.g)<3)return {tipo:'mojon2',m};
@@ -612,7 +612,7 @@ function ofertaAlferez(){elegir("Alférez Zamora","Muchacho, la Corona quiere lo
 
 // el arriero pide una palabra buena, «de bien». Las equivocadas son palabras huetares (lista 2 de Quesada) y él explica qué significan.
 const PALABRAS=[
- {w:'yurro',eco:'«Yurro» es el ojo de agua, donde nace el agua. Linda palabra, muchacho, pero yo te pedí una palabra de bien.'},
+ {w:'yurro',eco:'«Yurro» es el arroyito, el agua que nace y corre. Linda palabra, muchacho, pero yo te pedí una palabra de bien.'},
  {w:'purruja',eco:'¿«Purruja»? ¡El jején! Eso pica, muchacho; no es ninguna palabra de bien.'},
  {w:"bua'ë",ok:true},
  {w:'urrú',eco:'«Urrú» es palo podrido, tronco viejo. ¿Eso me ofrecés para dejarte pasar?'},
@@ -675,6 +675,7 @@ function usarC2(o){switch(o.tipo){
  case 'ramon':decir("Ramón Zamora",c3==2?"Las señales del volcán viejo están marcadas con luz naranja. Seguilas, muchacho; yo conozco el cerro de memoria.":LINEAS_RAMON[ram++%LINEAS_RAMON.length],false,10);break;
  case 'maderero':if(c3==5)ofertaMaderero();else decir("Maderero","Ya me voy, ya me voy. Pero alguien va a tener que cuidar este monte, porque hachas sobran.");break;
  case 'planta':plantar(o.p);break;
+ case 'galera':decir("Narrador","La galera de los Zamora: un techo de teja sobre horcones, con leña y un yugo. De aquí sale una quebradita que más al sur se junta con la quebrada de Caricias. Quesada la anotó en su informe: «en una depresión al Sur de Caricias y como á 600 metros está la galera de los Zamora».",true,12);break;
 }}
 
 // ---------- final bueno ----------
@@ -761,7 +762,7 @@ const senales=[
  [ZX-6,ZZ-9,'Los cerros hermanos',"Delicias, Tibás, Turú, Caricias y Zurquí no son volcanes aparte: son los restos del paleo-Barva, la primera generación del volcán Barva, activa hace entre 758.000 y 322.000 años. La lluvia lo fue desarmando, y sobre sus restos creció el Barva joven."]
 ].map(([x,z,e,t],i)=>marca3(x,z,0xffa040,e,t,i?null:g=>{const r=new THREE.Mesh(new THREE.DodecahedronGeometry(1.1,0),MF(0x3a3a40));r.position.y=.6;r.scale.y=.7;g.add(r);}));
 const yurros=[
- [ZX-20,ZZ+32,false,"Aquí había un <i>yurro</i>, un ojo de agua. Hoy solo queda barro seco entre los tocones."],
+ [ZX-20,ZZ+32,false,"Aquí corría un <i>yurro</i>, un arroyito. Hoy solo queda barro seco entre los tocones."],
  [ZX+28,ZZ+22,false,"Otro <i>yurro</i> seco. Alrededor solo hay <i>urrú</i>: palos y troncos podridos de lo que fue bosque."],
  [YW.x,YW.z,true,"Entre los últimos árboles todavía mana el agua. Quesada lo escribirá así: «donde quiera que aun hay árboles, hay agua»."]
 ].map(([x,z,agua,t])=>{let disco;const m=marca3(x,z,0x6ad0ff,'Yurro',t,g=>{disco=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.1,18),new THREE.MeshStandardMaterial({color:agua?0x3f88c5:0x7a6040,roughness:agua?.2:1}));disco.position.y=.15;g.add(disco);});m.disco=disco;return m;});
@@ -786,22 +787,34 @@ const ramon=colocar(persona({piel:0xc08a60,camisa:0xe0d6b8,pantalon:0x5a4a30,som
 const maderero=colocar(persona({piel:0xb88a60,camisa:0x8a4a3a,pantalon:0x4a4030,sombrero:0x9a8050}),YW.x-5,YW.z+5,2.4);
 {const mango=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.9,6),M(0x6b4423));mango.position.set(0,-.75,.2);mango.rotation.x=1.3;maderero.userData.aR.add(mango);
  const filo=new THREE.Mesh(new THREE.BoxGeometry(.04,.22,.16),M(0x9a9aa0,{metalness:.7,roughness:.3}));filo.position.set(0,.42,0);mango.add(filo);}
+// la galera de los Zamora (Quesada 1910, p. 72) y la quebradita que sale de ella
+const GX=QX-14,GZ=QZ+13;
+const galera=new THREE.Group();
+{for(const [x,z] of [[-2.2,-1.4],[2.2,-1.4],[-2.2,1.4],[2.2,1.4],[0,-1.4],[0,1.4]]){const h=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,2.4,6),M(0x5a3a1e));h.position.set(x,1.2,z);galera.add(h);}
+ for(const k of [-1,1]){const t=new THREE.Mesh(new THREE.BoxGeometry(5.2,.12,2),M(0x9a4a2e));t.position.set(0,2.75,k*.8);t.rotation.x=-k*.42;galera.add(t);}
+ for(let i=0;i<5;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,1.6,6),M(0x7a5a38));l.rotation.z=Math.PI/2;l.position.set(-1.2,.18+(i>2?.26:0),-.6+(i%3)*.3);galera.add(l);}
+ const yugo=new THREE.Mesh(new THREE.BoxGeometry(1.3,.14,.14),M(0x6b4423));yugo.position.set(1.3,1.1,1.2);galera.add(yugo);
+ const sg=cartel('Galera de los Zamora');sg.position.y=4;galera.add(sg);}
+colocar(sh(galera),GX,GZ,.3);galera.visible=false;
+const quebradita=new THREE.Group();
+for(let i=0;i<9;i++){const x=GX+1.5+i*1.6,z=GZ+3+i*1.1,w=new THREE.Mesh(new THREE.BoxGeometry(1.9,.04,.5),new THREE.MeshStandardMaterial({color:0x3f88c5,roughness:.2}));w.position.set(x,altura(x,z)+.05,z);w.rotation.y=-Math.atan2(1.1,1.6);quebradita.add(w);}
+scene.add(quebradita);quebradita.visible=false;
 [[quesada,'Lic. Octavio Quesada'],[ramon,'Ramón Zamora, vaquiano'],[maderero,'Maderero']].forEach(([n,t])=>{const s=cartel(t);s.position.y=2.9;n.add(s);n.visible=false;});
-const campamento=v=>{carpa.visible=quesada.visible=ramon.visible=v;};
+const campamento=v=>{carpa.visible=quesada.visible=ramon.visible=galera.visible=quebradita.visible=v;};
 function ocultarToyopan(v){casas.forEach(c=>c.visible=v);fogata.visible=v;gente.forEach(g=>g.p.visible=v);[anciano,alferez,escribano,campesino,buey].forEach(n=>n.visible=v);mariposas.forEach(m=>m.g.visible=v);}
 const talados=[];
-const enZurqui=a=>a.visible&&!bosquecito.includes(a)&&(Math.hypot(a.position.x-ZX,a.position.z-ZZ)<ZR+6||Math.hypot(a.position.x-QX,a.position.z-QZ)<8);
+const enZurqui=a=>a.visible&&!bosquecito.includes(a)&&(Math.hypot(a.position.x-ZX,a.position.z-ZZ)<ZR+6||Math.hypot(a.position.x-QX,a.position.z-QZ)<8||Math.hypot(a.position.x-GX,a.position.z-GZ)<7);
 function deforestarYa(){arboles.filter(enZurqui).forEach(a=>{a.visible=false;talados.push(a);});tocones.forEach(t=>t.visible=true);}
 function arbolesZurqui(n,crece){let k=0,i=0;const marcas=senales.concat(yurros,plantas);
  while(k<n&&i++<600){const a=Math.random()*6.28,r=6+Math.random()*(ZR-2),x=ZX+Math.cos(a)*r,z=ZZ+Math.sin(a)*r;
-  if(Math.abs(x)>178||Math.abs(z)>178||Math.hypot(x-QX,z-QZ)<8||marcas.some(m=>Math.hypot(m.g.position.x-x,m.g.position.z-z)<3.5))continue;
+  if(Math.abs(x)>178||Math.abs(z)>178||Math.hypot(x-QX,z-QZ)<8||Math.hypot(x-GX,z-GZ)<7||marcas.some(m=>Math.hypot(m.g.position.x-x,m.g.position.z-z)<3.5))continue;
   arbol(x,z);const t=arboles[arboles.length-1];if(crece){t.scale.setScalar(.01);crecer2.push({o:t,t0:reloj.elapsedTime+Math.random()*4,d:4});}k++;}}
 
 // ---------- diálogos ----------
 const LINEAS_TURU=[
  "Esta montaña es vieja, muchacho: más vieja que el volcán Barva que ves allá. Es su abuela, pero de la misma familia: el primer Barva, que la lluvia fue desarmando. Delicias, Tibás, Turú, Caricias y Zurquí: somos lo que quedó de él. Uno de esos cerros lleva mi nombre.",
  "Dentro del cerro hay chimeneas por donde subía la lava. Un día abrirán un túnel para un camino y las verán por un rato, antes de taparlas con cemento. Las piedras de aquí tienen medio millón de años.",
- "Por este paso, entre el Barva y el Irazú, entra la humedad del mar Caribe. El bosque la atrapa como una red y la devuelve en <i>yurros</i>, ojos de agua. De aquí bebe todo el valle. Por eso al monte se le pide permiso."];
+ "Por este paso, entre el Barva y el Irazú, entra la humedad del mar Caribe. El bosque la atrapa como una red y la devuelve en <i>yurros</i>, arroyitos que nacen de los ojos de agua. De aquí bebe todo el valle. Por eso al monte se le pide permiso."];
 const LINEAS_TURU_DESPUES=[
  "El bosque volvió, pero no es el de antes: es bosque nuevo, secundario. Cuidalo como si fuera viejo.",
  "De estos cerros bebe el agua de todo el valle. Lo que se siembra aquí arriba se bebe allá abajo.",
@@ -810,7 +823,8 @@ const LINEAS_RAMON=[
  "Ramón Zamora, para servirle. Zamora, como aquel alférez de los papeles viejos; si somos parientes, no lo sé.",
  "Este cerro era montaña cerrada. Los cedros amargos se fueron para durmientes del ferrocarril y para la madera de las iglesias de Heredia.",
  "Mucha madera de estos cerros se fue hasta de lastre en los barcos. Ahora es potrero y <i>urrú</i>: palo podrido.",
- "Los viejos decían que antes de entrar al monte había que pedir permiso. Ya casi nadie lo pide."];
+ "Los viejos decían que antes de entrar al monte había que pedir permiso. Ya casi nadie lo pide.",
+ "Aquella es la galera de los Zamora. De ahí sale una quebradita que baja a juntarse con la de Caricias. El licenciado planta la tienda aquí mismo, en las fuentes del Parasito."];
 const LINEAS_QUESADA=[
  "«¿Tendré que disertar sobre la utilidad de esa resiembra?» Creo que no: basta en el Gobierno un poco de buena voluntad para prevenir graves males.",
  "Recorrí todo el triángulo entre el cerro de Zurquí, el alto de La Palma y la junta de los Pará. Es la región más baja entre el Irazú y el Zurquí: ahí se juntan las aguas.",
@@ -833,8 +847,8 @@ function hablarQuesada(){const n=a=>a.filter(x=>x.listo).length;
  else if(c3==2)decir(Q,"Son tres señales, marcadas con luz naranja. Llevás "+n(senales)+".");
  else if(c3==3){c3=4;refrescarMarcas3();
   decir(Q,"¿Lo viste? Esta montaña es muy vieja, y por aquí baja el agua de todo el valle. Pero algo me preocupa.",false,8);
-  decir(Q,"Ramón dice que antes brotaba agua por todas partes. Buscá los <i>yurros</i> —así le dicen aquí a los ojos de agua—: son tres, marcados con luz azul. Fijate cómo están.",false,10);}
- else if(c3==4)decir(Q,"Buscá los yurros: tres ojos de agua, marcados con luz azul. Llevás "+n(yurros)+".");
+  decir(Q,"Ramón dice que antes brotaba agua por todas partes. Buscá los <i>yurros</i> —así le dicen aquí a los arroyitos y a los ojos de agua donde nacen—: son tres, marcados con luz azul. Fijate cómo están.",false,10);}
+ else if(c3==4)decir(Q,"Buscá los yurros: tres arroyitos, marcados con luz azul. Llevás "+n(yurros)+".");
  else if(c3==5)decir(Q,"¿Oís ese hacha allá arriba? Andá a ver quién anda entre los últimos árboles.");
  else if(c3==6){c3=7;refrescarMarcas3();
   decir(Q,"Lo que me contás confirma lo que vi. Entre el Irazú y el Zurquí esta región es la más baja: aquí afluyen las aguas. Y la tala inconsiderada las retira.",false,9);
@@ -886,6 +900,7 @@ function objetivoC3(){
  if(quesada.visible&&d2(quesada)<3.5)return {tipo:'quesada'};
  if(ramon.visible&&d2(ramon)<3.5)return {tipo:'ramon'};
  if(maderero.visible&&d2(maderero)<3.5)return {tipo:'maderero'};
+ if(galera.visible&&d2(galera)<5)return {tipo:'galera'};
  if(turu.visible&&d2(turu)<3.5)return {tipo:'turu'};
  if(c3==7)for(const p of plantas)if(!p.listo&&d2(p.g)<3)return {tipo:'planta',p};
  return null;}
@@ -893,7 +908,7 @@ function hudC3(){let m="",tg=null;const n=a=>a.filter(x=>x.listo).length,sig=a=>
  if(c3==1){m="Hablá con el licenciado <b>Octavio Quesada</b>, en su campamento al pie del Zurquí.";tg=quesada;}
  else if(c3==2){m="Recorré las <b>señales del volcán viejo</b> (luz naranja): "+n(senales)+"/3";tg=sig(senales);}
  else if(c3==3){m="Volvé con el licenciado <b>Quesada</b> y contale lo que viste.";tg=quesada;}
- else if(c3==4){m="Buscá los <b>yurros</b>, los ojos de agua del cerro (luz azul): "+n(yurros)+"/3";tg=sig(yurros);}
+ else if(c3==4){m="Buscá los <b>yurros</b>, los arroyitos del cerro (luz azul): "+n(yurros)+"/3";tg=sig(yurros);}
  else if(c3==5){m="Un <b>maderero</b> anda entre los últimos árboles. Hablá con él.";tg=maderero;}
  else if(c3==6){m="Contale al licenciado <b>Quesada</b> lo que pasó en el cerro.";tg=quesada;}
  else if(c3==7){m="Sembrá <b>6 arbolitos</b> en las marcas verdes: "+n(plantas)+"/6";const r=plantas.filter(x=>!x.listo).sort((p,q)=>d2(p.g)-d2(q.g))[0];tg=r?r.g:null;}
